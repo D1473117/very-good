@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="glass-panel text-center">
+    <h1 class="brand-title mb-4">FlavorFind</h1>
+    
+    <!-- Location Card -->
+    <div class="glass-card mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <span class="label"><i class="bi bi-geo-alt-fill text-warning"></i> 目前位置</span>
+            <button id="btn-locate" class="btn btn-sm btn-outline-warning rounded-circle" title="重新定位"><i class="bi bi-arrow-clockwise"></i></button>
+        </div>
+        <div class="location-display py-3 rounded">
+            <p id="location-text" class="m-0 text-white-50">尚未取得位置資訊，點擊右上方按鈕定位</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="glass-card mb-4">
+        <div class="mb-3 text-start">
+            <label class="form-label d-flex justify-content-between">
+                <span>預算 (<span id="budget-val">3</span>)</span>
+                <span>最高</span>
+            </label>
+            <input type="range" class="form-range custom-range" id="budget-slider" min="1" max="3" step="1" value="3">
+            <div class="d-flex justify-content-between text-white-50 small mt-1">
+                <span>平價</span>
+                <span>中等</span>
+                <span>昂貴</span>
+            </div>
+        </div>
+        <div class="text-start">
+            <label class="form-label d-flex justify-content-between">
+                <span>距離 (公里)</span>
+                <span id="distance-val">5 km</span>
+            </label>
+            <input type="range" class="form-range custom-range" id="distance-slider" min="1" max="15" step="1" value="5">
+        </div>
+    </div>
+
+    <!-- Recommend Button -->
+    <button id="btn-recommend" class="btn-recommend w-100 mb-4 position-relative">
+        <span id="btn-text">Recommend<br>Nearby Food</span>
+        <div id="btn-spinner" class="spinner-border text-light position-absolute top-50 start-50 translate-middle d-none" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </button>
+
+    <!-- Result Card (Hidden by default) -->
+    <div id="result-card" class="glass-card result-card d-none">
+        <h4 class="text-warning mb-1">🎉 推薦結果 🎉</h4>
+        <h2 id="result-name" class="fw-bold my-3">餐廳名稱</h2>
+        <div class="d-flex justify-content-center gap-3 mb-3 text-white-50">
+            <span id="result-category"><i class="bi bi-tag-fill"></i> 分類</span>
+            <span id="result-rating"><i class="bi bi-star-fill text-warning"></i> 4.5</span>
+            <span id="result-budget"><i class="bi bi-currency-dollar text-success"></i> 預算</span>
+        </div>
+        <a id="result-map-link" href="#" target="_blank" class="btn btn-outline-light w-100 mt-2">
+            <i class="bi bi-map-fill"></i> 開啟 Google Maps
+        </a>
+    </div>
+</div>
+
+<!-- Slot Machine Overlay -->
+<div id="slot-overlay" class="slot-overlay d-none">
+    <div class="slot-container">
+        <div id="slot-names" class="slot-names"></div>
+    </div>
+</div>
+{% endblock %}

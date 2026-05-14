@@ -1,0 +1,141 @@
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, #1f1c2c, #928DAB); /* Default background */
+    background-image: url('https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=1000&auto=format&fit=crop'); /* Aesthetic food bg */
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    color: #fff;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+}
+
+/* Dark overlay for better readability */
+body::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: -1;
+}
+
+.app-container {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+}
+
+.glass-panel {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 24px;
+    padding: 30px 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.brand-title {
+    font-weight: 800;
+    font-size: 2rem;
+    background: linear-gradient(90deg, #ff8a00, #e52e71);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.glass-card {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 16px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.label {
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.location-display {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+}
+
+/* Custom Range Slider */
+.custom-range::-webkit-slider-thumb {
+    background: #ff8a00;
+}
+
+.custom-range::-moz-range-thumb {
+    background: #ff8a00;
+}
+
+.btn-recommend {
+    background: linear-gradient(135deg, #ff8a00, #e52e71);
+    border: none;
+    border-radius: 16px;
+    color: white;
+    font-weight: 800;
+    font-size: 1.2rem;
+    padding: 20px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 10px 20px rgba(229, 46, 113, 0.4);
+}
+
+.btn-recommend:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 25px rgba(229, 46, 113, 0.5);
+}
+
+.btn-recommend:active {
+    transform: translateY(2px);
+}
+
+.result-card {
+    animation: fadeInUp 0.5s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Slot Overlay */
+.slot-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.9);
+    z-index: 1050;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.slot-container {
+    height: 100px;
+    overflow: hidden;
+    position: relative;
+    width: 80%;
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    border: 2px solid #ff8a00;
+}
+
+.slot-names {
+    position: absolute;
+    top: 0;
+    width: 100%;
+    text-align: center;
+    transition: top 3s cubic-bezier(0.1, 0.8, 0.2, 1);
+}
+
+.slot-item {
+    height: 100px;
+    line-height: 100px;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 0 10px rgba(255,138,0,0.8);
+}
