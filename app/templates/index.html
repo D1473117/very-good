@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-5">
+        
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="glass-card text-center p-5 mb-4">
+            <h1 class="display-5 fw-bold mb-3 text-primary">今天吃什麼？</h1>
+            <p class="lead text-muted mb-4">拯救選擇困難症，一鍵幫你決定下一餐！</p>
+            
+            <div class="spinning-wheel-container mb-4">
+                <div class="food-icon-roulette">
+                    <i class="fa-solid fa-burger food-icon"></i>
+                    <i class="fa-solid fa-pizza-slice food-icon"></i>
+                    <i class="fa-solid fa-bowl-rice food-icon"></i>
+                    <i class="fa-solid fa-hotdog food-icon"></i>
+                </div>
+            </div>
+
+            <button id="draw-btn" class="btn btn-primary btn-lg rounded-pill shadow-lg w-100 draw-btn-animate">
+                <i class="fa-solid fa-dice me-2"></i> 隨便抽一家
+            </button>
+        </div>
+
+        <!-- Result Screen (Hidden by default) -->
+        <div id="result-screen" class="glass-card result-card p-0 d-none">
+            <div class="result-image-container">
+                <img id="res-image" src="" alt="Restaurant Image" class="result-image">
+                <div class="result-badge"><i class="fa-solid fa-check-circle"></i> 推薦結果</div>
+            </div>
+            
+            <div class="p-4">
+                <h2 id="res-name" class="fw-bold mb-2">餐廳名稱</h2>
+                
+                <div class="d-flex align-items-center mb-3">
+                    <div class="rating-badge me-2">
+                        <i class="fa-solid fa-star text-warning"></i> 
+                        <span id="res-rating" class="fw-bold">4.5</span>
+                    </div>
+                    <span class="text-muted small">(<span id="res-reviews">1200</span> 則評論)</span>
+                </div>
+
+                <div class="info-list mb-4">
+                    <div class="info-item">
+                        <i class="fa-solid fa-location-dot text-primary w-20px"></i>
+                        <span id="res-address">台北市信義區...</span>
+                    </div>
+                    <div class="info-item">
+                        <i class="fa-solid fa-clock text-primary w-20px"></i>
+                        <span id="res-hours">11:00 - 21:00</span>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <a id="res-maps-btn" href="#" target="_blank" class="btn btn-success btn-lg rounded-pill shadow-sm">
+                        <i class="fa-solid fa-location-arrow me-2"></i> 導航去吃
+                    </a>
+                    <button id="redraw-btn" class="btn btn-outline-primary btn-lg rounded-pill mt-2">
+                        <i class="fa-solid fa-rotate-right me-2"></i> 再抽一次
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
