@@ -22,25 +22,55 @@ class RecommendationHistory(db.Model):
 
     @classmethod
     def create(cls, user_id, restaurant_id):
-        """系統自動寫入推薦歷史紀錄"""
-        history = cls(user_id=user_id, restaurant_id=restaurant_id)
-        db.session.add(history)
-        db.session.commit()
-        return history
+        """系統自動寫入推薦歷史紀錄
+
+        :param user_id: 使用者 ID
+        :param restaurant_id: 餐廳 ID
+        :return: RecommendationHistory 實例，若發生異常則回傳 None
+        """
+        try:
+            history = cls(user_id=user_id, restaurant_id=restaurant_id)
+            db.session.add(history)
+            db.session.commit()
+            return history
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error in RecommendationHistory.create: {e}")
+            return None
 
     @classmethod
     def get_by_user(cls, user_id, limit=None, offset=None):
-        """取得特定使用者的歷史推薦紀錄，支援分頁與時間降序"""
-        query = cls.query.filter_by(user_id=user_id).order_by(cls.recommended_at.desc())
-        if limit:
-            query = query.limit(limit)
-        if offset:
-            query = query.offset(offset)
-        return query.all()
+        """取得特定使用者的歷史推薦紀錄，支援分頁與時間降序
+
+        :param user_id: 使用者 ID
+        :param limit: 回傳資料筆數限制 (選填)
+        :param offset: 跳過資料筆數 (選填)
+        :return: RecommendationHistory 實例清單，若發生異常則回傳空清單
+        """
+        try:
+            query = cls.query.filter_by(user_id=user_id).order_by(cls.recommended_at.desc())
+            if limit:
+                query = query.limit(limit)
+            if offset:
+                query = query.offset(offset)
+            return query.all()
+        except Exception as e:
+            print(f"Error in RecommendationHistory.get_by_user: {e}")
+            return []
 
     @classmethod
     def clear_user_history(cls, user_id):
-        """清空特定使用者的所有推薦歷史"""
-        cls.query.filter_by(user_id=user_id).delete()
-        db.session.commit()
-        return True
+        """清空特定使用者的所有推薦歷史
+
+        :param user_id: 使用者 ID
+        :return: bool (清空是否成功)
+        """
+        try:
+            cls.query.filter_by(user_id=user_id).delete()
+            db.session.commit()
+            return True
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error in RecommendationHistory.clear_user_history: {e}")
+            return False
+

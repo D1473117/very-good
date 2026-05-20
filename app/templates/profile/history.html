@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}歷史紀錄 - 隨便吃什麼都好{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <!-- 頂部標題與清空按鈕 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 mb-1 fw-bold"><i class="bi bi-clock-history text-primary me-2"></i>歷史推薦紀錄</h1>
+                <p class="text-muted mb-0">自動保存您的每一次美食抽選紀錄</p>
+            </div>
+            {% if histories %}
+                <form action="{{ url_for('history.clear_history') }}" method="POST" onsubmit="return confirm('確定要清空所有的推薦歷史紀錄嗎？此動作無法復原。');">
+                    <button type="submit" class="btn btn-outline-danger">
+                        <i class="bi bi-trash3-fill me-1"></i>清空歷史
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+
+        {% if histories %}
+            <!-- 取得使用者已收藏的所有餐廳 ID 清單，用於動態顯示愛心狀態 -->
+            {% set favorited_ids = current_user.favorites | map(attribute='restaurant_id') | list %}
+
+            <div class="card glass-card border-0 mb-4">
+                <div class="table-responsive">
+                    <table class="table table-hover table-dark align-middle mb-0" style="background: transparent;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid var(--card-border);">
+                                <th scope="col" class="py-3 ps-4" style="width: 35%;">餐廳名稱</th>
+                                <th scope="col" class="py-3" style="width: 15%;">餐點類型</th>
+                                <th scope="col" class="py-3" style="width: 15%;">評分</th>
+                                <th scope="col" class="py-3" style="width: 20%;">推薦時間</th>
+                                <th scope="col" class="py-3 pe-4 text-end" style="width: 15%;">快速操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for history in histories %}
+                                <tr style="border-bottom: 1px solid var(--card-border);">
+                                    <!-- 餐廳名稱 -->
+                                    <td class="py-3 ps-4">
+                                        <a href="/restaurant/{{ history.restaurant_id }}" class="text-decoration-none text-light fw-semibold text-hover-primary">
+                                            {{ history.restaurant.name }}
+                                        </a>
+                                    </td>
+                                    <!-- 類型 -->
+                                    <td class="py-3">
+                                        <span class="badge badge-type">{{ history.restaurant.category or '未分類' }}</span>
+                                    </td>
+                                    <!-- 評分 -->
+                                    <td class="py-3">
+                                        {% if history.restaurant.rating %}
+                                            <span class="text-warning"><i class="bi bi-star-fill me-1"></i>{{ history.restaurant.rating }}</span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <!-- 推薦時間 -->
+                                    <td class="py-3 text-muted">
+                                        {{ history.recommended_at.strftime('%Y-%m-%d %H:%M') }}
+                                    </td>
+                                    <!-- 操作 -->
+                                    <td class="py-3 pe-4 text-end">
+                                        <div class="d-inline-flex gap-2">
+                                            <!-- 快速收藏切換按鈕 -->
+                                            {% if history.restaurant_id in favorited_ids %}
+                                                <form action="{{ url_for('favorite.delete_favorite') }}" method="POST" class="d-inline">
+                                                    <input type="hidden" name="restaurant_id" value="{{ history.restaurant_id }}">
+                                                    <button type="submit" class="btn btn-sm btn-icon text-danger" title="已收藏，點擊取消">
+                                                        <i class="bi bi-heart-fill"></i>
+                                                    </button>
+                                                </form>
+                                            {% else %}
+                                                <form action="{{ url_for('favorite.add_favorite') }}" method="POST" class="d-inline">
+                                                    <input type="hidden" name="restaurant_id" value="{{ history.restaurant_id }}">
+                                                    <button type="submit" class="btn btn-sm btn-icon text-muted" title="加入收藏">
+                                                        <i class="bi bi-heart"></i>
+                                                    </button>
+                                                </form>
+                                            {% endif %}
+                                            <!-- 詳情 -->
+                                            <a href="/restaurant/{{ history.restaurant_id }}" class="btn btn-sm btn-outline-custom" title="查看詳情">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 分頁導航 (Pagination) -->
+            {% if total_pages > 1 %}
+                <nav aria-label="Page navigation" class="mt-4">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item {% if page == 1 %}disabled{% endif %}">
+                            <a class="page-link glass-page" href="{{ url_for('history.list_history', page=page-1) }}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo; 上一頁</span>
+                            </a>
+                        </li>
+                        {% for p in range(1, total_pages + 1) %}
+                            <li class="page-item {% if p == page %}active{% endif %}">
+                                <a class="page-link glass-page {% if p == page %}active-page{% endif %}" href="{{ url_for('history.list_history', page=p) }}">{{ p }}</a>
+                            </li>
+                        {% endfor %}
+                        <li class="page-item {% if page == total_pages %}disabled{% endif %}">
+                            <a class="page-link glass-page" href="{{ url_for('history.list_history', page=page+1) }}" aria-label="Next">
+                                <span aria-hidden="true">下一頁 &raquo;</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            {% endif %}
+        {% else %}
+            <!-- 空白狀態 (Empty State) -->
+            <div class="card glass-card text-center p-5 my-5">
+                <div class="card-body">
+                    <div class="mb-4">
+                        <i class="bi bi-clock-history text-muted" style="font-size: 5rem; opacity: 0.5;"></i>
+                    </div>
+                    <h3 class="fw-bold mb-3">尚無推薦歷史紀錄</h3>
+                    <p class="text-muted mb-4">看起來您還沒有使用過隨機美食抽選。快去抽一間心儀的店吧！</p>
+                    <a href="/" class="btn btn-gradient btn-lg px-4"><i class="bi bi-dice-5 me-2"></i>開始抽選</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* 表格樣式微調 */
+    .table {
+        color: var(--text-main) !important;
+    }
+    .table-hover tbody tr:hover {
+        background-color: rgba(255, 255, 255, 0.02) !important;
+    }
+    .text-hover-primary:hover {
+        color: #ff4b2b !important;
+    }
+    .btn-icon {
+        background: transparent;
+        border: none;
+        padding: 0.25rem 0.5rem;
+        transition: all 0.2s;
+    }
+    .btn-icon:hover {
+        transform: scale(1.2);
+    }
+    .btn-icon.text-muted:hover {
+        color: #ff416c !important;
+    }
+    
+    /* 分頁元件玻璃擬態 */
+    .glass-page {
+        background: var(--card-bg) !important;
+        border: 1px solid var(--card-border) !important;
+        color: var(--text-main) !important;
+        margin: 0 3px;
+        border-radius: 6px !important;
+        transition: all 0.3s;
+    }
+    .glass-page:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+        border-color: var(--text-muted) !important;
+    }
+    .disabled .glass-page {
+        opacity: 0.4;
+        pointer-events: none;
+    }
+    .active-page {
+        background: var(--primary-grad) !important;
+        border-color: transparent !important;
+        color: white !important;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}

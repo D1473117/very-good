@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}我的收藏 - 隨便吃什麼都好{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h2 mb-1 fw-bold"><i class="bi bi-heart-fill text-danger me-2"></i>我的收藏</h1>
+                <p class="text-muted mb-0">您儲存的所有口袋名單餐廳</p>
+            </div>
+            <a href="/" class="btn btn-gradient"><i class="bi bi-compass me-1"></i>去抽一間</a>
+        </div>
+
+        {% if favorites %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for favorite in favorites %}
+                    <div class="col">
+                        <div class="card h-100 glass-card">
+                            <!-- 餐廳示意封面圖 -->
+                            <div class="position-relative" style="height: 160px; overflow: hidden; border-top-left-radius: 15px; border-top-right-radius: 15px; background: rgba(255,255,255,0.02); border-bottom: 1px solid var(--card-border);">
+                                <div class="d-flex align-items-center justify-content-center h-100">
+                                    <i class="bi bi-shop text-muted" style="font-size: 3.5rem;"></i>
+                                </div>
+                                <span class="position-absolute top-3 start-3 badge badge-type">{{ favorite.restaurant.category or '未分類' }}</span>
+                            </div>
+                            
+                            <div class="card-body d-flex flex-column p-4">
+                                <h5 class="card-title fw-bold text-truncate mb-2" title="{{ favorite.restaurant.name }}">
+                                    {{ favorite.restaurant.name }}
+                                </h5>
+                                
+                                <div class="mb-3">
+                                    {% if favorite.restaurant.rating %}
+                                        {% set rating = favorite.restaurant.rating | float %}
+                                        <div class="d-flex align-items-center">
+                                            {% for i in range(rating | int) %}
+                                                <i class="bi bi-star-fill rating-star"></i>
+                                            {% endfor %}
+                                            {% if rating % 1 >= 0.5 %}
+                                                <i class="bi bi-star-half rating-star"></i>
+                                            {% endif %}
+                                            <span class="ms-1 text-muted">({{ rating }})</span>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-muted">暫無評分</span>
+                                    {% endif %}
+                                </div>
+
+                                <p class="card-text text-muted small text-truncate mb-4">
+                                    <i class="bi bi-geo-alt-fill me-1"></i>{{ favorite.restaurant.address or '暫無地址資訊' }}
+                                </p>
+
+                                <div class="mt-auto d-flex gap-2">
+                                    <a href="/restaurant/{{ favorite.restaurant_id }}" class="btn btn-outline-custom flex-grow-1">
+                                        <i class="bi bi-info-circle me-1"></i>詳情
+                                    </a>
+                                    <form action="{{ url_for('favorite.delete_favorite') }}" method="POST" class="d-inline">
+                                        <input type="hidden" name="restaurant_id" value="{{ favorite.restaurant_id }}">
+                                        <button type="submit" class="btn btn-outline-danger" style="border-radius: 8px;" title="取消收藏">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- 空白狀態 (Empty State) -->
+            <div class="card glass-card text-center p-5 my-5">
+                <div class="card-body">
+                    <div class="mb-4">
+                        <i class="bi bi-heartbreak text-muted" style="font-size: 5rem; opacity: 0.5;"></i>
+                    </div>
+                    <h3 class="fw-bold mb-3">尚無收藏餐廳</h3>
+                    <p class="text-muted mb-4">點擊下方按鈕前往推薦頁面，將您心儀的餐廳存入這裏吧！</p>
+                    <a href="/" class="btn btn-gradient btn-lg px-4"><i class="bi bi-compass me-2"></i>前往抽選</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .top-3 {
+        top: 1rem;
+    }
+    .start-3 {
+        left: 1rem;
+    }
+    .btn-outline-danger {
+        border-color: rgba(220, 53, 69, 0.3);
+        color: #ea868f;
+        transition: all 0.3s;
+    }
+    .btn-outline-danger:hover {
+        background-color: rgba(220, 53, 69, 0.1);
+        border-color: #dc3545;
+        color: #ea868f;
+    }
+</style>
+{% endblock %}
