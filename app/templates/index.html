@@ -1,63 +1,185 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="glass-panel text-center">
+<div class="glass-panel text-center position-relative">
     <h1 class="brand-title mb-4">FlavorFind</h1>
     
-    <!-- Location Card -->
-    <div class="glass-card mb-4">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <span class="label"><i class="bi bi-geo-alt-fill text-warning"></i> 目前位置</span>
-            <button id="btn-locate" class="btn btn-sm btn-outline-warning rounded-circle" title="重新定位"><i class="bi bi-arrow-clockwise"></i></button>
-        </div>
-        <div class="location-display py-3 rounded">
-            <p id="location-text" class="m-0 text-white-50">尚未取得位置資訊，點擊右上方按鈕定位</p>
-        </div>
-    </div>
-
-    <!-- Filters -->
-    <div class="glass-card mb-4">
-        <div class="mb-3 text-start">
-            <label class="form-label d-flex justify-content-between">
-                <span>預算 (<span id="budget-val">3</span>)</span>
-                <span>最高</span>
-            </label>
-            <input type="range" class="form-range custom-range" id="budget-slider" min="1" max="3" step="1" value="3">
-            <div class="d-flex justify-content-between text-white-50 small mt-1">
-                <span>平價</span>
-                <span>中等</span>
-                <span>昂貴</span>
+    <!-- ================= EXPLORE TAB ================= -->
+    <div id="tab-explore" class="tab-content">
+        <!-- Location Card -->
+        <div class="glass-card mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="label"><i class="bi bi-geo-alt-fill text-warning"></i> 目前位置</span>
+                <button id="btn-locate" class="btn btn-sm btn-outline-warning rounded-circle" title="重新定位"><i class="bi bi-arrow-clockwise"></i></button>
+            </div>
+            <div class="location-display py-3 rounded">
+                <p id="location-text" class="m-0 text-white-50">尚未取得位置資訊，點擊右上方按鈕定位</p>
             </div>
         </div>
-        <div class="text-start">
-            <label class="form-label d-flex justify-content-between">
-                <span>距離 (公里)</span>
-                <span id="distance-val">5 km</span>
-            </label>
-            <input type="range" class="form-range custom-range" id="distance-slider" min="1" max="15" step="1" value="5">
+
+        <!-- Filters -->
+        <div class="glass-card mb-3">
+            <div class="mb-3 text-start">
+                <label class="form-label d-flex justify-content-between">
+                    <span>預算 (<span id="budget-val">3</span>)</span>
+                    <span>最高</span>
+                </label>
+                <input type="range" class="form-range custom-range" id="budget-slider" min="1" max="3" step="1" value="3">
+                <div class="d-flex justify-content-between text-white-50 small mt-1">
+                    <span>平價</span>
+                    <span>中等</span>
+                    <span>昂貴</span>
+                </div>
+            </div>
+            <div class="text-start">
+                <label class="form-label d-flex justify-content-between">
+                    <span>距離 (公里)</span>
+                    <span id="distance-val">5 km</span>
+                </label>
+                <input type="range" class="form-range custom-range" id="distance-slider" min="1" max="15" step="1" value="5">
+            </div>
+        </div>
+
+        <!-- Advanced Filters Collapsible Toggle -->
+        <div class="text-end mb-3">
+            <button id="btn-advanced-toggle" class="btn btn-sm btn-link text-warning p-0 text-decoration-none">
+                <i class="bi bi-sliders2-vertical"></i> 進階防雷篩選 <i class="bi bi-chevron-down"></i>
+            </button>
+        </div>
+
+        <!-- Advanced Filters Panel -->
+        <div id="advanced-filters" class="glass-card mb-4 d-none text-start">
+            <!-- Minimum Rating -->
+            <div class="mb-3">
+                <label class="form-label d-flex justify-content-between">
+                    <span>最低評分要求</span>
+                    <span id="rating-val" class="text-warning">0.0 <i class="bi bi-star-fill"></i></span>
+                </label>
+                <input type="range" class="form-range custom-range" id="rating-slider" min="0.0" max="4.8" step="0.1" value="0.0">
+            </div>
+
+            <!-- Only from favorites -->
+            <div class="form-check form-switch mb-3 custom-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="switch-favorites">
+                <label class="form-check-input-label text-warning fw-bold" for="switch-favorites">
+                    <i class="bi bi-heart-fill"></i> 僅從我的口袋名單中抽取
+                </label>
+            </div>
+
+            <!-- Category Exclusion (飲食避雷針) -->
+            <div>
+                <label class="form-label text-white-50 small mb-2"><i class="bi bi-shield-x text-danger"></i> 飲食避雷針 (勾選不想吃的種類)</label>
+                <div id="category-checkboxes" class="d-flex flex-wrap gap-2 py-1">
+                    <!-- Categories checkboxes loaded via JS -->
+                    <span class="text-white-50 small">載入分類中...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommend Button -->
+        <button id="btn-recommend" class="btn-recommend w-100 mb-4 position-relative">
+            <span id="btn-text">Recommend<br>Nearby Food</span>
+            <div id="btn-spinner" class="spinner-border text-light position-absolute top-50 start-50 translate-middle d-none" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </button>
+
+        <!-- Result Card (Hidden by default) -->
+        <div id="result-card" class="glass-card result-card position-relative d-none text-center">
+            <!-- Heart Favorite Button in top right -->
+            <button id="btn-favorite-toggle" class="btn btn-favorite-heart position-absolute" title="加入口袋名單">
+                <i id="heart-icon" class="bi bi-heart"></i>
+            </button>
+
+            <h4 class="text-warning mb-1">🎉 推薦結果 🎉</h4>
+            <h2 id="result-name" class="fw-bold my-3">餐廳名稱</h2>
+            <div class="d-flex justify-content-center gap-3 mb-3 text-white-50">
+                <span id="result-category"><i class="bi bi-tag-fill"></i> 分類</span>
+                <span id="result-rating"><i class="bi bi-star-fill text-warning"></i> 4.5</span>
+                <span id="result-budget"><i class="bi bi-currency-dollar text-success"></i> 預算</span>
+            </div>
+            <a id="result-map-link" href="#" target="_blank" class="btn btn-outline-light w-100 mt-2">
+                <i class="bi bi-map-fill"></i> 開啟 Google Maps
+            </a>
         </div>
     </div>
 
-    <!-- Recommend Button -->
-    <button id="btn-recommend" class="btn-recommend w-100 mb-4 position-relative">
-        <span id="btn-text">Recommend<br>Nearby Food</span>
-        <div id="btn-spinner" class="spinner-border text-light position-absolute top-50 start-50 translate-middle d-none" role="status">
-            <span class="visually-hidden">Loading...</span>
+    <!-- ================= FAVORITES TAB ================= -->
+    <div id="tab-favorites" class="tab-content d-none text-start">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="fw-bold m-0"><i class="bi bi-heart-fill text-danger animate-pulse"></i> 口袋名單</h3>
+            <button id="btn-add-custom-toggle" class="btn btn-sm btn-warning rounded-pill">
+                <i class="bi bi-plus-lg"></i> 新增私房菜
+            </button>
         </div>
-    </button>
 
-    <!-- Result Card (Hidden by default) -->
-    <div id="result-card" class="glass-card result-card d-none">
-        <h4 class="text-warning mb-1">🎉 推薦結果 🎉</h4>
-        <h2 id="result-name" class="fw-bold my-3">餐廳名稱</h2>
-        <div class="d-flex justify-content-center gap-3 mb-3 text-white-50">
-            <span id="result-category"><i class="bi bi-tag-fill"></i> 分類</span>
-            <span id="result-rating"><i class="bi bi-star-fill text-warning"></i> 4.5</span>
-            <span id="result-budget"><i class="bi bi-currency-dollar text-success"></i> 預算</span>
+        <!-- Add Custom Restaurant Form (Hidden by default) -->
+        <div id="custom-restaurant-form" class="glass-card mb-4 d-none">
+            <h5 class="text-warning mb-3"><i class="bi bi-pencil-square"></i> 新增私房口袋餐廳</h5>
+            <div class="mb-3">
+                <label for="custom-name" class="form-label small">餐廳名稱 <span class="text-danger">*</span></label>
+                <input type="text" class="form-control glass-input" id="custom-name" placeholder="例如：巷口無名炒飯">
+            </div>
+            <div class="mb-3">
+                <label for="custom-category" class="form-label small">分類標籤 <span class="text-danger">*</span></label>
+                <input type="text" class="form-control glass-input" id="custom-category" placeholder="例如：小吃、麵食、甜點">
+            </div>
+            <div class="mb-3">
+                <label for="custom-budget" class="form-label small">預算級別</label>
+                <select class="form-select glass-input" id="custom-budget">
+                    <option value="1">平價 ($)</option>
+                    <option value="2">中等 ($$)</option>
+                    <option value="3">昂貴 ($$$)</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="custom-map-url" class="form-label small">Google Maps 網址 (選填)</label>
+                <input type="text" class="form-control glass-input" id="custom-map-url" placeholder="https://maps.google.com/...">
+            </div>
+            <div class="d-flex gap-2 justify-content-end">
+                <button id="btn-custom-cancel" class="btn btn-sm btn-outline-light rounded-pill px-3">取消</button>
+                <button id="btn-custom-submit" class="btn btn-sm btn-warning rounded-pill px-3">確認新增</button>
+            </div>
         </div>
-        <a id="result-map-link" href="#" target="_blank" class="btn btn-outline-light w-100 mt-2">
-            <i class="bi bi-map-fill"></i> 開啟 Google Maps
-        </a>
+
+        <!-- Favorites List Container -->
+        <div id="favorites-list" class="favorites-list-container d-flex flex-column gap-3">
+            <!-- Dynamic elements loaded via JS -->
+            <div class="text-center py-4 text-white-50">
+                <div class="spinner-border spinner-border-sm text-warning mb-2" role="status"></div>
+                <p class="m-0">讀取口袋名單中...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= JOURNAL/HISTORY TAB ================= -->
+    <div id="tab-history" class="tab-content d-none text-start">
+        <h3 class="fw-bold mb-3"><i class="bi bi-journal-bookmark-fill text-warning"></i> 探險日誌</h3>
+        
+        <!-- History List Container -->
+        <div id="history-list" class="history-list-container d-flex flex-column gap-3">
+            <!-- Dynamic elements loaded via JS -->
+            <div class="text-center py-4 text-white-50">
+                <div class="spinner-border spinner-border-sm text-warning mb-2" role="status"></div>
+                <p class="m-0">讀取探險紀錄中...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= BOTTOM NAVIGATION BAR ================= -->
+    <div class="bottom-nav d-flex justify-content-around align-items-center mt-5">
+        <button class="nav-item active" data-tab="explore">
+            <i class="bi bi-compass"></i>
+            <span>探索</span>
+        </button>
+        <button class="nav-item" data-tab="favorites">
+            <i class="bi bi-heart"></i>
+            <span>口袋名單</span>
+        </button>
+        <button class="nav-item" data-tab="history">
+            <i class="bi bi-journal-text"></i>
+            <span>探險日誌</span>
+        </button>
     </div>
 </div>
 
