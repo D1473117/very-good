@@ -10,10 +10,21 @@
         <div class="glass-card mb-4">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <span class="label"><i class="bi bi-geo-alt-fill text-warning"></i> 目前位置</span>
-                <button id="btn-locate" class="btn btn-sm btn-outline-warning rounded-circle" title="重新定位"><i class="bi bi-arrow-clockwise"></i></button>
+                <button id="btn-locate" class="btn btn-sm btn-outline-warning rounded-circle" title="GPS 定位"><i class="bi bi-arrow-clockwise"></i></button>
             </div>
-            <div class="location-display py-3 rounded">
-                <p id="location-text" class="m-0 text-white-50">尚未取得位置資訊，點擊右上方按鈕定位</p>
+            <div class="location-display py-2 rounded mb-2 text-center">
+                <p id="location-text" class="m-0 text-white-50 small" style="font-size: 0.8rem;">尚未取得位置，可點擊定位或從下方選擇</p>
+            </div>
+            <!-- Manual Landmark Dropdown -->
+            <div class="input-group input-group-sm">
+                <label class="input-group-text text-warning small border-0 bg-transparent pe-1" for="select-landmark" style="font-size: 0.75rem;"><i class="bi bi-pin-map-fill"></i> 手動地標：</label>
+                <select class="form-select glass-input py-1 border-0" id="select-landmark" style="font-size: 0.75rem; border-radius: 8px !important;">
+                    <option value="">-- 未選擇 (使用 GPS 或全域) --</option>
+                    <option value="25.041,121.536">台北大安區 (台北市中心)</option>
+                    <option value="25.0478,121.5170">台北車站 (中正區)</option>
+                    <option value="24.1788,120.6466">台中逢甲大學 (逢甲商圈)</option>
+                    <option value="24.150,120.665">台中西區 (公益路商圈)</option>
+                </select>
             </div>
         </div>
 

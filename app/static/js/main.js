@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const distanceVal = document.getElementById('distance-val');
     const btnLocate = document.getElementById('btn-locate');
     const locationText = document.getElementById('location-text');
+    const selectLandmark = document.getElementById('select-landmark');
     const btnRecommend = document.getElementById('btn-recommend');
     const btnText = document.getElementById('btn-text');
     const btnSpinner = document.getElementById('btn-spinner');
@@ -159,6 +160,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Geolocation
     btnLocate.addEventListener('click', () => {
         locationText.textContent = '定位中...';
+        // Reset manual dropdown when using GPS
+        if (selectLandmark) selectLandmark.value = '';
+        
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
@@ -179,6 +183,28 @@ document.addEventListener('DOMContentLoaded', () => {
             locationText.textContent = '您的瀏覽器不支援定位功能';
         }
     });
+
+    // Landmark Selector Event
+    if (selectLandmark) {
+        selectLandmark.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (val) {
+                const parts = val.split(',');
+                userLat = parseFloat(parts[0]);
+                userLng = parseFloat(parts[1]);
+                const selectedText = e.target.options[e.target.selectedIndex].text;
+                locationText.textContent = `手動地標：${selectedText}`;
+                locationText.classList.remove('text-white-50');
+                locationText.classList.add('text-success');
+            } else {
+                userLat = null;
+                userLng = null;
+                locationText.textContent = '尚未取得位置，可點擊定位或從下方選擇';
+                locationText.classList.remove('text-success');
+                locationText.classList.add('text-white-50');
+            }
+        });
+    }
 
     // ==========================================
     // 3. EXPLORE: RECOMMEND ACTION
