@@ -2,11 +2,12 @@
 body {
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     min-height: 100vh;
-    font-family: 'Noto Sans TC', sans-serif;
+    font-family: 'Noto Sans TC', 'Inter', sans-serif;
     display: flex;
     flex-direction: column;
 }
 
+/* Glassmorphism card */
 .glass-card {
     background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(12px);
@@ -18,10 +19,33 @@ body {
     transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
+/* Premium Glass Navbar */
+.bg-dark-glass {
+    background: rgba(33, 37, 41, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Text & Color Helpers */
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #2575fc 0%, #ff007f 100%);
+}
+
+.text-clip-text {
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    display: inline-block;
+}
+
+.fw-extrabold {
+    font-weight: 900;
+}
+
 /* Icons roulette animation */
 .food-icon-roulette {
     font-size: 4rem;
-    color: #4a90e2;
+    color: #2575fc;
     height: 100px;
     display: flex;
     justify-content: center;
@@ -50,7 +74,7 @@ body {
 .result-image-container {
     position: relative;
     width: 100%;
-    height: 220px;
+    height: 240px;
     overflow: hidden;
 }
 
@@ -58,6 +82,11 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.result-card:hover .result-image {
+    transform: scale(1.05);
 }
 
 .result-badge {
@@ -65,16 +94,61 @@ body {
     top: 16px;
     right: 16px;
     background: rgba(255, 255, 255, 0.9);
-    padding: 6px 12px;
+    padding: 6px 14px;
     border-radius: 20px;
-    font-weight: bold;
+    font-size: 0.85rem;
+    font-weight: 700;
     color: #2e7d32;
     box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    backdrop-filter: blur(4px);
+}
+
+/* Floating Heart Icon Button */
+.favorite-heart-btn {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.85);
+    border: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    color: #8e8e93;
+    font-size: 1.2rem;
+    backdrop-filter: blur(4px);
+    z-index: 10;
+}
+
+.favorite-heart-btn:hover {
+    transform: scale(1.15);
+    background: #fff;
+    color: #dc3545;
+}
+
+.favorite-heart-btn:active {
+    transform: scale(0.9);
+}
+
+.favorite-heart-btn .fa-solid.fa-heart {
+    color: #dc3545;
+    animation: heartbeat 0.3s ease;
+}
+
+@keyframes heartbeat {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
 }
 
 .rating-badge {
     background: #fff8e1;
-    padding: 4px 10px;
+    padding: 6px 12px;
     border-radius: 12px;
     color: #ff8f00;
 }
@@ -93,7 +167,23 @@ body {
 }
 
 .draw-btn-animate:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+}
+
+.draw-btn-animate:active {
+    transform: translateY(-1px);
+}
+
+.draw-fav-btn-animate {
+    transition: all 0.3s ease;
+}
+
+.draw-fav-btn-animate:hover {
+    transform: translateY(-3px) scale(1.02);
+}
+
+.draw-fav-btn-animate:active {
+    transform: translateY(-1px) scale(1);
 }
 
 .loading-pulse {
@@ -105,3 +195,176 @@ body {
     50% { opacity: 0.6; }
     100% { opacity: 1; }
 }
+
+/* Star Rating Radio Buttons */
+.rating-stars-input {
+    display: flex;
+    gap: 4px;
+}
+
+.rating-stars-input input {
+    display: none;
+}
+
+.rating-stars-input label {
+    font-size: 1.4rem;
+    color: #dee2e6;
+    cursor: pointer;
+    transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.rating-stars-input label:hover,
+.rating-stars-input label:hover ~ label,
+.rating-stars-input input:checked ~ label {
+    color: #ffc107;
+    transform: scale(1.1);
+}
+
+.rating-stars-input label:active {
+    transform: scale(0.9);
+}
+
+/* Reviews List Styles */
+.review-item {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding: 14px 0;
+    animation: slideIn 0.3s ease;
+}
+
+.review-item:last-child {
+    border-bottom: none;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Card Hover Lift */
+.hover-lift-card {
+    transition: transform 0.3s cubic-bezier(0.165, 0.84, 0.44, 1), box-shadow 0.3s ease;
+}
+
+.hover-lift-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 12px 24px rgba(31, 38, 135, 0.15);
+}
+
+/* Fade Out for Cancel Favorite Card */
+.fade-out {
+    opacity: 0;
+    transform: scale(0.9);
+    transition: all 0.4s ease;
+}
+
+/* Login/Register Circles */
+.login-logo-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(37, 117, 252, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Animation triggers */
+.animate-fade-in {
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-pulse {
+    animation: pulseIcon 2s infinite;
+}
+
+@keyframes pulseIcon {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Premium Upgraded Restaurant Info display styles */
+.animate-bounce-slow {
+    animation: bounceSlow 3s infinite;
+}
+
+@keyframes bounceSlow {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+/* Breathing Open Status Badges */
+.status-badge-open {
+    background: rgba(46, 125, 50, 0.1) !important;
+    color: #2e7d32 !important;
+    border: 1px solid rgba(46, 125, 50, 0.25);
+    animation: statusBreatheOpen 2s infinite ease-in-out;
+}
+
+.status-badge-closing {
+    background: rgba(239, 108, 0, 0.1) !important;
+    color: #ef6c00 !important;
+    border: 1px solid rgba(239, 108, 0, 0.25);
+    animation: statusBreatheClosing 2s infinite ease-in-out;
+}
+
+.status-badge-closed {
+    background: rgba(142, 142, 147, 0.1) !important;
+    color: #8e8e93 !important;
+    border: 1px solid rgba(142, 142, 147, 0.2);
+}
+
+@keyframes statusBreatheOpen {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(46, 125, 50, 0.2); }
+    50% { box-shadow: 0 0 8px 2px rgba(46, 125, 50, 0.35); }
+}
+
+@keyframes statusBreatheClosing {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(239, 108, 0, 0.2); }
+    50% { box-shadow: 0 0 8px 2px rgba(239, 108, 0, 0.35); }
+}
+
+/* Price Badge Capsule Gauge */
+.price-badge-capsule {
+    background: rgba(0, 0, 0, 0.03) !important;
+    letter-spacing: 2px;
+}
+
+.price-active {
+    color: #2575fc;
+    font-weight: 900;
+    opacity: 1;
+    text-shadow: 0 0 4px rgba(37, 117, 252, 0.3);
+}
+
+.price-inactive {
+    color: #dee2e6;
+    opacity: 0.35;
+}
+
+/* Signature Tag Styles */
+.signature-tag {
+    background: linear-gradient(135deg, rgba(37, 117, 252, 0.08) 0%, rgba(255, 0, 127, 0.08) 100%);
+    border: 1px solid rgba(37, 117, 252, 0.15);
+    color: #2575fc;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+}
+
+.signature-tag:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, rgba(37, 117, 252, 0.15) 0%, rgba(255, 0, 127, 0.15) 100%);
+    box-shadow: 0 4px 10px rgba(37, 117, 252, 0.15);
+    color: #ff007f;
+    border-color: rgba(255, 0, 127, 0.3);
+}
+

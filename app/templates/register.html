@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center w-100">
+    <div class="col-md-6 col-lg-4">
+        <div class="glass-card p-5 text-center">
+            <div class="login-header mb-4">
+                <div class="login-logo-circle mb-3 mx-auto bg-primary bg-opacity-10">
+                    <i class="fa-solid fa-user-plus text-primary fs-3"></i>
+                </div>
+                <h2 class="fw-bold text-dark mb-1">註冊新會員</h2>
+                <p class="text-muted small">建立免費帳號以開啟所有進階功能</p>
+            </div>
+            
+            <form action="/register" method="POST" class="text-start">
+                <div class="mb-3">
+                    <label for="username" class="form-label small fw-bold text-muted">使用者帳號</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 rounded-start-pill text-muted px-3">
+                            <i class="fa-solid fa-user"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0 rounded-end-pill py-2 shadow-none" id="username" name="username" placeholder="請輸入欲註冊之帳號" required minlength="3" autocomplete="username">
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="password" class="form-label small fw-bold text-muted">設定密碼</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 rounded-start-pill text-muted px-3">
+                            <i class="fa-solid fa-key"></i>
+                        </span>
+                        <input type="password" class="form-control border-start-0 rounded-end-pill py-2 shadow-none" id="password" name="password" placeholder="請設定 6 位數以上密碼" required minlength="6" autocomplete="new-password">
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="confirm_password" class="form-label small fw-bold text-muted">確認密碼</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 rounded-start-pill text-muted px-3">
+                            <i class="fa-solid fa-circle-check text-muted"></i>
+                        </span>
+                        <input type="password" class="form-control border-start-0 rounded-end-pill py-2 shadow-none" id="confirm_password" name="confirm_password" placeholder="請再次輸入密碼" required minlength="6" autocomplete="new-password">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100 rounded-pill py-2.5 fw-bold shadow-sm mb-3">
+                    <i class="fa-solid fa-user-check me-1"></i> 註冊並登入
+                </button>
+            </form>
+            
+            <div class="login-footer mt-4">
+                <span class="text-muted small">已經有帳號了嗎？ 
+                    <a href="/login" class="fw-bold text-primary text-decoration-none">立即登入</a>
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

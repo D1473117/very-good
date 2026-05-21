@@ -19,6 +19,9 @@ erDiagram
         STRING photo_url "餐廳照片 URL"
         FLOAT latitude "緯度"
         FLOAT longitude "經度"
+        INTEGER price_level "價格區間 (1-4)"
+        STRING category "餐點類型"
+        STRING signature "招牌美味必點"
     }
 ```
 

@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center w-100">
+    <div class="col-12 col-xl-9">
+        
+        <!-- Header -->
+        <div class="mb-5 text-center text-md-start">
+            <h1 class="fw-extrabold text-dark mb-1">
+                <i class="fa-solid fa-comment-dots text-info me-2 animate-pulse"></i>我的評論紀錄
+            </h1>
+            <p class="text-muted">這裡記錄了您在各餐廳發表的所有真實心聲與評價</p>
+        </div>
+
+        {% if reviews %}
+            <!-- Interactive Reviews Timeline / Grid -->
+            <div class="row g-4">
+                {% for rv in reviews %}
+                    <div class="col-12 review-card-item" id="review-item-{{ rv.id }}">
+                        <div class="glass-card p-4 border-0 hover-lift-card d-flex flex-column flex-md-row gap-4 align-items-md-center">
+                            
+                            <!-- Restaurant Quick Thumbnail -->
+                            <div class="flex-shrink-0 rounded-4 overflow-hidden border border-secondary border-opacity-10 shadow-sm" style="width: 100px; height: 100px;">
+                                <img src="{{ rv.photo_url or 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4' }}" alt="{{ rv.restaurant_name }}" class="w-100 h-100 object-fit-cover">
+                            </div>
+                            
+                            <!-- Review Content Body -->
+                            <div class="flex-grow-1">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+                                    <h4 class="fw-bold text-dark mb-0 fs-5">{{ rv.restaurant_name }}</h4>
+                                    <span class="text-muted small fs-7">
+                                        <i class="fa-regular fa-clock me-1"></i>發表於：{{ rv.created_at }}
+                                    </span>
+                                </div>
+                                
+                                <!-- Rating Stars Display -->
+                                <div class="rating-badge-inline mb-3">
+                                    <span class="me-2 text-warning fs-6">
+                                        {% for i in range(1, 6) %}
+                                            {% if i <= rv.rating %}
+                                                <i class="fa-solid fa-star"></i>
+                                            {% else %}
+                                                <i class="fa-regular fa-star text-secondary text-opacity-35"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </span>
+                                    <span class="badge bg-warning bg-opacity-10 text-dark small fw-bold">{{ rv.rating }}.0 分</span>
+                                </div>
+                                
+                                <!-- Comment Text -->
+                                <p class="text-secondary mb-0 bg-light bg-opacity-30 p-3 rounded-3 fs-6 border-start border-3 border-info">
+                                    {{ rv.comment or '（無文字說明）' }}
+                                </p>
+                            </div>
+
+                            <!-- Action Deletion Buttons -->
+                            <div class="flex-shrink-0 text-end">
+                                <button class="btn btn-outline-danger btn-sm rounded-pill px-3 py-2 delete-my-review-btn" data-review-id="{{ rv.id }}" title="刪除評語">
+                                    <i class="fa-solid fa-trash-can me-1"></i> 刪除評論
+                                </button>
+                            </div>
+
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- Empty State Layout -->
+            <div class="glass-card text-center p-5 rounded-5 border-0 shadow-sm w-100">
+                <div class="empty-state-icon-circle bg-light mx-auto mb-4 d-flex justify-content-center align-items-center" style="width: 80px; height: 80px; rounded-circle: true; border-radius: 50%;">
+                    <i class="fa-regular fa-comment-dots text-muted fs-2"></i>
+                </div>
+                <h3 class="fw-bold text-dark mb-2">目前尚無評論紀錄</h3>
+                <p class="text-muted mb-4 max-w-400 mx-auto">抽中餐廳並用餐後，記得到首頁結果卡片下方，為餐廳打分並寫下您的真實評語，豐富您的美食生活紀錄！</p>
+                <a href="/" class="btn btn-primary rounded-pill px-4 py-2.5 fw-bold shadow-sm">
+                    <i class="fa-solid fa-house me-1"></i> 回首頁抽美食
+                </a>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

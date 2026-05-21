@@ -1,14 +1,15 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="row justify-content-center">
+<div class="row justify-content-center w-100">
     <div class="col-md-8 col-lg-5">
         
         <!-- Welcome Screen -->
         <div id="welcome-screen" class="glass-card text-center p-5 mb-4">
-            <h1 class="display-5 fw-bold mb-3 text-primary">今天吃什麼？</h1>
+            <h1 class="display-5 fw-bold mb-3 text-primary bg-gradient-primary text-clip-text">今天吃什麼？</h1>
             <p class="lead text-muted mb-4">拯救選擇困難症，一鍵幫你決定下一餐！</p>
             
+            <!-- spinning-wheel-container -->
             <div class="spinning-wheel-container mb-4">
                 <div class="food-icon-roulette">
                     <i class="fa-solid fa-burger food-icon"></i>
@@ -18,41 +19,122 @@
                 </div>
             </div>
 
-            <button id="draw-btn" class="btn btn-primary btn-lg rounded-pill shadow-lg w-100 draw-btn-animate">
-                <i class="fa-solid fa-dice me-2"></i> 隨便抽一家
+            <!-- Advanced Filter Trigger -->
+            <div class="filter-toggle-container mb-4">
+                <button class="btn btn-outline-primary btn-sm rounded-pill px-4" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+                    <i class="fa-solid fa-sliders me-1"></i> 進階條件篩選
+                </button>
+            </div>
+
+            <!-- Advanced Filter Collapse Panel -->
+            <div class="collapse mb-4 text-start" id="filterCollapse">
+                <div class="card card-body filter-card rounded-4 border-0 p-4 shadow-sm bg-light bg-opacity-70">
+                    <h6 class="fw-bold mb-3 text-dark d-flex align-items-center">
+                        <i class="fa-solid fa-filter me-2 text-primary"></i> 篩選條件設定
+                    </h6>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label for="filter-category" class="form-label small fw-bold text-muted">餐點類型</label>
+                            <select id="filter-category" class="form-select rounded-pill border-secondary border-opacity-20 shadow-none">
+                                <option value="all">全部類型</option>
+                                <option value="日式">日式料理</option>
+                                <option value="速食">美式速食</option>
+                                <option value="火鍋">美味火鍋</option>
+                                <option value="中式/水餃">中式水餃麵食</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label for="filter-price" class="form-label small fw-bold text-muted">價格預算</label>
+                            <select id="filter-price" class="form-select rounded-pill border-secondary border-opacity-20 shadow-none">
+                                <option value="all">全部價格</option>
+                                <option value="1">$ (平價)</option>
+                                <option value="2">$$ (中價位)</option>
+                                <option value="3">$$$ (高價位)</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label for="filter-rating" class="form-label small fw-bold text-muted">最低評分</label>
+                            <select id="filter-rating" class="form-select rounded-pill border-secondary border-opacity-20 shadow-none">
+                                <option value="all">全部評分</option>
+                                <option value="4.0">4.0+ ★ 良好</option>
+                                <option value="4.5">4.5+ ★ 極佳</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button id="draw-btn" class="btn btn-primary btn-lg rounded-pill shadow-lg w-100 draw-btn-animate py-3 fw-bold">
+                <i class="fa-solid fa-dice me-2 fs-5"></i> 隨便抽一家
             </button>
         </div>
 
         <!-- Result Screen (Hidden by default) -->
-        <div id="result-screen" class="glass-card result-card p-0 d-none">
+        <div id="result-screen" class="glass-card result-card p-0 d-none mb-4">
             <div class="result-image-container">
                 <img id="res-image" src="" alt="Restaurant Image" class="result-image">
                 <div class="result-badge"><i class="fa-solid fa-check-circle"></i> 推薦結果</div>
+                
+                <!-- Floating Favorite Toggle Heart Button -->
+                <button id="favorite-btn" class="favorite-heart-btn" data-restaurant-id="">
+                    <i class="fa-regular fa-heart heart-icon"></i>
+                </button>
             </div>
             
             <div class="p-4">
-                <h2 id="res-name" class="fw-bold mb-2">餐廳名稱</h2>
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h2 id="res-name" class="fw-bold mb-0 text-dark">餐廳名稱</h2>
+                    <span id="res-category-badge" class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2 small fw-bold">分類</span>
+                </div>
                 
-                <div class="d-flex align-items-center mb-3">
-                    <div class="rating-badge me-2">
-                        <i class="fa-solid fa-star text-warning"></i> 
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rating-badge me-2 d-flex align-items-center">
+                        <i class="fa-solid fa-star text-warning me-1"></i> 
                         <span id="res-rating" class="fw-bold">4.5</span>
                     </div>
-                    <span class="text-muted small">(<span id="res-reviews">1200</span> 則評論)</span>
+                    <span class="text-muted small me-3">(<span id="res-reviews">1200</span> 則 Google 評論)</span>
                 </div>
 
-                <div class="info-list mb-4">
-                    <div class="info-item">
-                        <i class="fa-solid fa-location-dot text-primary w-20px"></i>
-                        <span id="res-address">台北市信義區...</span>
+                <!-- 今日營業狀態與動態 GPS 距離預估徽章 -->
+                <div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
+                    <span id="res-status-badge" class="badge rounded-pill px-3 py-2 fw-bold fs-7 shadow-sm">
+                        <!-- JS 動態插入狀態 -->
+                    </span>
+                    <span id="res-distance-badge" class="badge bg-light text-dark border border-secondary border-opacity-10 rounded-pill px-3 py-2 fw-bold fs-7 shadow-sm">
+                        <i class="fa-solid fa-location-crosshairs text-primary me-1"></i> 計算距離中...
+                    </span>
+                </div>
+
+                <div class="info-list mb-3">
+                    <div class="info-item d-flex align-items-center">
+                        <i class="fa-solid fa-location-dot text-primary w-20px me-2 text-center"></i>
+                        <span id="res-address" class="text-secondary small">台北市信義區...</span>
                     </div>
-                    <div class="info-item">
+                    <div class="info-item d-flex align-items-center">
                         <i class="fa-solid fa-clock text-primary w-20px"></i>
-                        <span id="res-hours">11:00 - 21:00</span>
+                        <span id="res-hours" class="text-secondary small">11:00 - 21:00</span>
+                    </div>
+                    <div class="info-item d-flex align-items-center">
+                        <i class="fa-solid fa-wallet text-primary w-20px me-2 text-center"></i>
+                        <div id="res-price-gauge" class="price-badge-capsule d-inline-flex align-items-center bg-light px-2 py-0-5 rounded-pill border border-secondary border-opacity-15 me-2">
+                            <!-- JS 動態渲染價格量規 -->
+                        </div>
+                        <span id="res-price-text" class="text-secondary small fw-semibold">中等價位</span>
                     </div>
                 </div>
 
-                <div class="d-grid gap-2">
+                <!-- 招牌必點推薦區塊 -->
+                <div id="res-signature-box" class="mb-4 bg-primary bg-opacity-5 p-3 rounded-4 border border-primary border-opacity-10 d-none">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fa-solid fa-crown text-warning me-2 animate-bounce-slow"></i>
+                        <span class="fw-bold text-primary small">👑 招牌美味必點：</span>
+                    </div>
+                    <div id="res-signature-tags" class="d-flex flex-wrap gap-2">
+                        <!-- JS 動態插入漸層 Tags -->
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 mb-4">
                     <a id="res-maps-btn" href="#" target="_blank" class="btn btn-success btn-lg rounded-pill shadow-sm">
                         <i class="fa-solid fa-location-arrow me-2"></i> 導航去吃
                     </a>
@@ -60,6 +142,53 @@
                         <i class="fa-solid fa-rotate-right me-2"></i> 再抽一次
                     </button>
                 </div>
+
+                <hr class="border-secondary border-opacity-10">
+
+                <!-- 評論專區 -->
+                <div class="reviews-section mt-4">
+                    <h4 class="fw-bold text-dark fs-5 mb-3">
+                        <i class="fa-regular fa-comments me-2 text-primary"></i> 饕客評價
+                    </h4>
+                    
+                    <!-- 撰寫新評論表單 -->
+                    <div class="write-review-box p-3 rounded-4 mb-4 bg-light bg-opacity-70">
+                        {% if session.user_id %}
+                            <h6 class="fw-bold mb-2">撰寫您的評價：</h6>
+                            <!-- Star Selection Form -->
+                            <div class="star-rating mb-3">
+                                <span class="star-label me-2 small text-muted">美味評分:</span>
+                                <div class="rating-stars-input d-inline-flex flex-row-reverse">
+                                    <input type="radio" name="rating-stars" id="star5" value="5"><label for="star5" title="5星 (完美)"><i class="fa-solid fa-star"></i></label>
+                                    <input type="radio" name="rating-stars" id="star4" value="4"><label for="star4" title="4星 (非常好)"><i class="fa-solid fa-star"></i></label>
+                                    <input type="radio" name="rating-stars" id="star3" value="3"><label for="star3" title="3星 (普通)"><i class="fa-solid fa-star"></i></label>
+                                    <input type="radio" name="rating-stars" id="star2" value="2"><label for="star2" title="2星 (不推)"><i class="fa-solid fa-star"></i></label>
+                                    <input type="radio" name="rating-stars" id="star1" value="1"><label for="star1" title="1星 (極差)"><i class="fa-solid fa-star"></i></label>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <textarea id="review-comment" class="form-control rounded-4 border-0 p-3 shadow-none bg-white fs-6" rows="2" placeholder="寫下您的心得，例如：水餃大顆美味、環境乾淨等..."></textarea>
+                            </div>
+                            <div class="text-end">
+                                <button id="submit-review-btn" class="btn btn-primary btn-sm rounded-pill px-4 shadow-sm">
+                                    <i class="fa-solid fa-paper-plane me-1"></i> 送出評語
+                                </button>
+                            </div>
+                        {% else %}
+                            <div class="text-center py-2">
+                                <span class="text-muted small">
+                                    <i class="fa-solid fa-lock me-1"></i> 想寫評論嗎？請先 <a href="/login" class="fw-bold text-primary text-decoration-none">登入帳號</a>！
+                                </span>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- 店家現有評論列表 -->
+                    <div id="restaurant-reviews-list" class="reviews-list">
+                        <!--評論項目將會以 JS 動態渲染-->
+                    </div>
+                </div>
+
             </div>
         </div>
 
