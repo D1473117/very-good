@@ -1,15 +1,5 @@
-import sqlite3
 import random
-import os
-from werkzeug.security import generate_password_hash, check_password_hash
-
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'instance', 'database.db')
-
-def get_db_connection():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+from app.models.base import get_db_connection
 
 def init_db():
     conn = get_db_connection()
@@ -95,131 +85,8 @@ def init_db():
     
     conn.close()
 
-# ----------------- User Model Functions -----------------
-def create_user(username, password):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    password_hash = generate_password_hash(password)
-    try:
-        cursor.execute('INSERT INTO User (username, password_hash) VALUES (?, ?)', (username, password_hash))
-        conn.commit()
-        user_id = cursor.lastrowid
-        conn.close()
-        return user_id
-    except sqlite3.IntegrityError:
-        conn.close()
-        return None  # Username already exists
-
-def get_user_by_id(user_id):
-    conn = get_db_connection()
-    user = conn.execute('SELECT * FROM User WHERE id = ?', (user_id,)).fetchone()
-    conn.close()
-    return dict(user) if user else None
-
-def get_user_by_username(username):
-    conn = get_db_connection()
-    user = conn.execute('SELECT * FROM User WHERE username = ?', (username,)).fetchone()
-    conn.close()
-    return dict(user) if user else None
-
-def check_user_credentials(username, password):
-    user = get_user_by_username(username)
-    if user and check_password_hash(user['password_hash'], password):
-        return user
-    return None
-
-# ----------------- Favorite Model Functions -----------------
-def toggle_favorite(user_id, restaurant_id):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    # Check if already favorited
-    fav = cursor.execute('SELECT * FROM Favorite WHERE user_id = ? AND restaurant_id = ?', 
-                         (user_id, restaurant_id)).fetchone()
-    
-    is_fav = False
-    if fav:
-        cursor.execute('DELETE FROM Favorite WHERE user_id = ? AND restaurant_id = ?', 
-                       (user_id, restaurant_id))
-    else:
-        cursor.execute('INSERT INTO Favorite (user_id, restaurant_id) VALUES (?, ?)', 
-                       (user_id, restaurant_id))
-        is_fav = True
-        
-    conn.commit()
-    conn.close()
-    return is_fav
-
-def is_user_favorited(user_id, restaurant_id):
-    if not user_id:
-        return False
-    conn = get_db_connection()
-    fav = conn.execute('SELECT 1 FROM Favorite WHERE user_id = ? AND restaurant_id = ?', 
-                       (user_id, restaurant_id)).fetchone()
-    conn.close()
-    return fav is not None
-
-def get_user_favorites(user_id):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    # Join with Restaurant to get restaurant details
-    favorites = cursor.execute('''
-        SELECT r.* FROM Restaurant r
-        JOIN Favorite f ON r.id = f.restaurant_id
-        WHERE f.user_id = ?
-        ORDER BY f.created_at DESC
-    ''', (user_id,)).fetchall()
-    conn.close()
-    return [dict(f) for f in favorites]
-
-# ----------------- Review Model Functions -----------------
-def add_review(user_id, restaurant_id, rating, comment):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO Review (user_id, restaurant_id, rating, comment)
-        VALUES (?, ?, ?, ?)
-    ''', (user_id, restaurant_id, rating, comment))
-    conn.commit()
-    review_id = cursor.lastrowid
-    conn.close()
-    return review_id
-
-def get_restaurant_reviews(restaurant_id):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    reviews = cursor.execute('''
-        SELECT rv.*, u.username FROM Review rv
-        JOIN User u ON rv.user_id = u.id
-        WHERE rv.restaurant_id = ?
-        ORDER BY rv.created_at DESC
-    ''', (restaurant_id,)).fetchall()
-    conn.close()
-    return [dict(r) for r in reviews]
-
-def get_user_reviews(user_id):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    reviews = cursor.execute('''
-        SELECT rv.*, r.name as restaurant_name, r.photo_url FROM Review rv
-        JOIN Restaurant r ON rv.restaurant_id = r.id
-        WHERE rv.user_id = ?
-        ORDER BY rv.created_at DESC
-    ''', (user_id,)).fetchall()
-    conn.close()
-    return [dict(r) for r in reviews]
-
-def delete_review(review_id, user_id):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    # Ensure the review belongs to the user
-    cursor.execute('DELETE FROM Review WHERE id = ? AND user_id = ?', (review_id, user_id))
-    rows_affected = cursor.rowcount
-    conn.commit()
-    conn.close()
-    return rows_affected > 0
-
-# ----------------- Recommendation Model Functions -----------------
 def get_random_restaurant(category=None, price_level=None, min_rating=None, user_id=None):
+    from app.models.favorite import is_user_favorited  # Prevent circular import
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -249,13 +116,5 @@ def get_random_restaurant(category=None, price_level=None, min_rating=None, user
             selected['is_favorited'] = is_user_favorited(user_id, selected['id'])
         else:
             selected['is_favorited'] = False
-        return selected
-    return None
-
-def get_random_favorite(user_id):
-    favorites = get_user_favorites(user_id)
-    if favorites:
-        selected = random.choice(favorites)
-        selected['is_favorited'] = True  # It is definitely favorited since it is drawn from favorites
         return selected
     return None
