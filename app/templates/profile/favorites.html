@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}我的收藏 - 隨便吃什麼都好{% endblock %}
+
+{% block content %}
+<div class="glass-card accent-header">
+    <div style="margin-bottom: 2rem;">
+        <h1 style="font-size: 2.2rem;"><i class="bi bi-heart-fill" style="color: #FF416C; margin-right: 0.5rem;"></i>我的收藏清單</h1>
+        <p style="color: var(--text-secondary); margin-bottom: 0;">這裡收集了您所有鍾愛的美味餐廳，隨時可以回訪或開啟導航！</p>
+    </div>
+
+    {% if restaurants %}
+        <div class="grid">
+            {% for r in restaurants %}
+                <div class="restaurant-card">
+                    <div class="card-cover">
+                        <i class="bi bi-shop"></i>
+                        <span class="badge-cuisine card-badge">{{ r.category }}</span>
+                        <button type="button" class="card-fav-btn active" data-restaurant-id="{{ r.id }}">
+                            <i class="bi bi-heart-fill"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="card-body">
+                        <div>
+                            <a href="{{ url_for('restaurant.detail', restaurant_id=r.id) }}" class="card-title">{{ r.name }}</a>
+                            <div class="card-meta">
+                                <span><i class="bi bi-star-fill" style="color: #ff9f1c; margin-right: 0.3rem;"></i>{{ r.rating }} 評分</span>
+                                <span><i class="bi bi-currency-dollar" style="margin-right: 0.3rem;"></i>
+                                    {% if r.price_level == 1 %}平價 ($)
+                                    {% elif r.price_level == 2 %}中等 ($$)
+                                    {% elif r.price_level == 3 %}昂貴 ($$$)
+                                    {% elif r.price_level == 4 %}奢華 ($$$$)
+                                    {% endif %}
+                                </span>
+                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;"><i class="bi bi-geo-alt-fill" style="margin-right: 0.3rem;"></i>{{ r.address }}</span>
+                            </div>
+                        </div>
+                        
+                        <a href="{{ url_for('restaurant.detail', restaurant_id=r.id) }}" class="card-link" style="margin-top: 1rem;">
+                            查看詳評與地圖 <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <i class="bi bi-heart"></i>
+            <h3>您的收藏清單空空如也</h3>
+            <p style="color: var(--text-muted); margin-bottom: 1.5rem;">在隨機抽選或餐廳列表中，點擊心形圖示即可收藏餐廳！</p>
+            <a href="{{ url_for('main.index') }}" class="nav-btn" style="display: inline-flex; border-radius: 10px;">
+                開始探索餐廳
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+{% block title %}歷史紀錄 - 隨便吃什麼都好{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Tab Styling */
+    .tab-header {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid var(--glass-border);
+        padding-bottom: 1rem;
+    }
+    .tab-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        transition: var(--transition-smooth);
+    }
+    .tab-btn:hover {
+        color: #fff;
+        background: var(--glass-bg-hover);
+    }
+    .tab-btn.active {
+        color: #fff;
+        background: var(--primary-gradient);
+        box-shadow: 0 4px 15px rgba(255, 65, 108, 0.3);
+    }
+    .tab-panel {
+        display: none;
+        animation: fadeIn 0.4s ease-out;
+    }
+    .tab-panel.active {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="glass-card accent-header">
+    <div style="margin-bottom: 2rem;">
+        <h1 style="font-size: 2.2rem;"><i class="bi bi-clock-history" style="color: #FF416C; margin-right: 0.5rem;"></i>個人歷史足跡</h1>
+        <p style="color: var(--text-secondary); margin-bottom: 0;">在這裡可以回溯您在系統中隨機抽中過的餐廳，以及您發表過的所有評價與留言。</p>
+    </div>
+
+    <!-- Tab Buttons -->
+    <div class="tab-header">
+        <button type="button" class="tab-btn active" id="tab-spins" onclick="switchTab('spins')">
+            <i class="bi bi-dice-5-fill" style="margin-right: 0.4rem;"></i>隨機抽選歷史
+        </button>
+        <button type="button" class="tab-btn" id="tab-reviews" onclick="switchTab('reviews')">
+            <i class="bi bi-chat-left-heart-fill" style="margin-right: 0.4rem;"></i>我的評論紀錄
+        </button>
+    </div>
+
+    <!-- Tab 1: Spins History -->
+    <div class="tab-panel active" id="panel-spins">
+        {% if spins %}
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>抽選時間</th>
+                            <th>餐廳名稱</th>
+                            <th>料理類型</th>
+                            <th>價格等級</th>
+                            <th>設定搜尋半徑</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in spins %}
+                            {% if s.restaurant %}
+                                <tr>
+                                    <td style="color: var(--text-secondary);">{{ s.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td><a href="{{ url_for('restaurant.detail', restaurant_id=s.restaurant.id) }}" class="text-white">{{ s.restaurant.name }}</a></td>
+                                    <td><span class="badge-cuisine">{{ s.restaurant.category }}</span></td>
+                                    <td>
+                                        {% if s.restaurant.price_level == 1 %}$
+                                        {% elif s.restaurant.price_level == 2 %}$$
+                                        {% elif s.restaurant.price_level == 3 %}$$$
+                                        {% elif s.restaurant.price_level == 4 %}$$$$
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ s.distance }}m</td>
+                                    <td>
+                                        <a href="{{ url_for('restaurant.detail', restaurant_id=s.restaurant.id) }}" class="card-link">
+                                            查看詳情 <i class="bi bi-arrow-right"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="bi bi-dice-5"></i>
+                <h3>尚未有任何抽選紀錄</h3>
+                <p style="color: var(--text-muted);">回到首頁點選「開始隨機抽選」，讓命運之輪為您記錄每一餐！</p>
+                <a href="{{ url_for('main.index') }}" class="nav-btn" style="display: inline-flex; border-radius: 10px;">
+                    現在去抽一餐
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Tab 2: Reviews History -->
+    <div class="tab-panel" id="panel-reviews">
+        {% if reviews %}
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>發表時間</th>
+                            <th>餐廳名稱</th>
+                            <th>給予星等</th>
+                            <th>評論內容</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in reviews %}
+                            {% if r.restaurant %}
+                                <tr>
+                                    <td style="color: var(--text-secondary); white-space: nowrap;">{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td><a href="{{ url_for('restaurant.detail', restaurant_id=r.restaurant.id) }}" class="text-white" style="font-weight: 700;">{{ r.restaurant.name }}</a></td>
+                                    <td style="white-space: nowrap;">
+                                        <div class="rating-stars">
+                                            {% for i in range(r.rating | int) %}
+                                                <i class="bi bi-star-fill"></i>
+                                            {% endfor %}
+                                            {% for i in range(5 - r.rating | int) %}
+                                                <i class="bi bi-star"></i>
+                                            {% endfor %}
+                                        </div>
+                                    </td>
+                                    <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary);">
+                                        {{ r.comment }}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('restaurant.detail', restaurant_id=r.restaurant.id) }}" class="card-link">
+                                            查看餐廳 <i class="bi bi-arrow-right"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="bi bi-chat-heart"></i>
+                <h3>尚未發表過任何評論</h3>
+                <p style="color: var(--text-muted);">去您造訪過的餐廳詳細頁面，分享您的星級評分與美味體驗吧！</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function switchTab(tabName) {
+        // Toggle tab button classes
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.getElementById('tab-' + tabName).classList.add('active');
+
+        // Toggle panel display
+        document.querySelectorAll('.tab-panel').forEach(panel => {
+            panel.classList.remove('active');
+        });
+        document.getElementById('panel-' + tabName).classList.add('active');
+    }
+</script>
+{% endblock %}
