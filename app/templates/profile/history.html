@@ -4,87 +4,63 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-10">
-        <!-- 頂部標題與清空按鈕 -->
+    <div class="col-lg-10">
+        <!-- 頁面標題區 -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h1 class="h2 mb-1 fw-bold"><i class="bi bi-clock-history text-primary me-2"></i>歷史推薦紀錄</h1>
-                <p class="text-muted mb-0">自動保存您的每一次美食抽選紀錄</p>
+                <p class="text-muted mb-0">自動保存您的每一次美食抽選紀錄，尋找美味不漏拍</p>
             </div>
-            {% if histories %}
-                <form action="{{ url_for('history.clear_history') }}" method="POST" onsubmit="return confirm('確定要清空所有的推薦歷史紀錄嗎？此動作無法復原。');">
-                    <button type="submit" class="btn btn-outline-danger">
-                        <i class="bi bi-trash3-fill me-1"></i>清空歷史
-                    </button>
-                </form>
-            {% endif %}
+            <a href="/" class="btn btn-gradient px-4"><i class="bi bi-dice-5 me-2"></i>再次抽選</a>
         </div>
 
         {% if histories %}
-            <!-- 取得使用者已收藏的所有餐廳 ID 清單，用於動態顯示愛心狀態 -->
-            {% set favorited_ids = current_user.favorites | map(attribute='restaurant_id') | list %}
-
-            <div class="card glass-card border-0 mb-4">
+            <!-- 歷史紀錄表格卡片 -->
+            <div class="card glass-card border-0 mb-4 overflow-hidden">
                 <div class="table-responsive">
-                    <table class="table table-hover table-dark align-middle mb-0" style="background: transparent;">
+                    <table class="table table-hover align-middle mb-0" style="background: transparent;">
                         <thead>
                             <tr style="border-bottom: 2px solid var(--card-border);">
                                 <th scope="col" class="py-3 ps-4" style="width: 35%;">餐廳名稱</th>
-                                <th scope="col" class="py-3" style="width: 15%;">餐點類型</th>
+                                <th scope="col" class="py-3" style="width: 20%;">餐點類型</th>
                                 <th scope="col" class="py-3" style="width: 15%;">評分</th>
                                 <th scope="col" class="py-3" style="width: 20%;">推薦時間</th>
-                                <th scope="col" class="py-3 pe-4 text-end" style="width: 15%;">快速操作</th>
+                                <th scope="col" class="py-3 pe-4 text-end" style="width: 10%;">快速操作</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for history in histories %}
                                 <tr style="border-bottom: 1px solid var(--card-border);">
                                     <!-- 餐廳名稱 -->
-                                    <td class="py-3 ps-4">
-                                        <a href="/restaurant/{{ history.restaurant_id }}" class="text-decoration-none text-light fw-semibold text-hover-primary">
-                                            {{ history.restaurant.name }}
-                                        </a>
+                                    <td class="py-3 ps-4 text-light fw-semibold">
+                                        {{ history.restaurant_name }}
                                     </td>
-                                    <!-- 類型 -->
+                                    <!-- 餐點類型 -->
                                     <td class="py-3">
-                                        <span class="badge badge-type">{{ history.restaurant.category or '未分類' }}</span>
+                                        <span class="badge badge-type">{{ history.category or '未分類' }}</span>
                                     </td>
                                     <!-- 評分 -->
                                     <td class="py-3">
-                                        {% if history.restaurant.rating %}
-                                            <span class="text-warning"><i class="bi bi-star-fill me-1"></i>{{ history.restaurant.rating }}</span>
+                                        {% if history.rating %}
+                                            <span class="text-warning"><i class="bi bi-star-fill rating-star"></i>{{ history.rating }}</span>
                                         {% else %}
-                                            <span class="text-muted">-</span>
+                                            <span class="text-muted small">-</span>
                                         {% endif %}
                                     </td>
                                     <!-- 推薦時間 -->
                                     <td class="py-3 text-muted">
-                                        {{ history.recommended_at.strftime('%Y-%m-%d %H:%M') }}
+                                        {{ history.recommended_at.strftime('%Y-%m-%d %H:%M') if history.recommended_at else '' }}
                                     </td>
-                                    <!-- 操作 -->
+                                    <!-- 快速操作：加入收藏 -->
                                     <td class="py-3 pe-4 text-end">
-                                        <div class="d-inline-flex gap-2">
-                                            <!-- 快速收藏切換按鈕 -->
-                                            {% if history.restaurant_id in favorited_ids %}
-                                                <form action="{{ url_for('favorite.delete_favorite') }}" method="POST" class="d-inline">
-                                                    <input type="hidden" name="restaurant_id" value="{{ history.restaurant_id }}">
-                                                    <button type="submit" class="btn btn-sm btn-icon text-danger" title="已收藏，點擊取消">
-                                                        <i class="bi bi-heart-fill"></i>
-                                                    </button>
-                                                </form>
-                                            {% else %}
-                                                <form action="{{ url_for('favorite.add_favorite') }}" method="POST" class="d-inline">
-                                                    <input type="hidden" name="restaurant_id" value="{{ history.restaurant_id }}">
-                                                    <button type="submit" class="btn btn-sm btn-icon text-muted" title="加入收藏">
-                                                        <i class="bi bi-heart"></i>
-                                                    </button>
-                                                </form>
-                                            {% endif %}
-                                            <!-- 詳情 -->
-                                            <a href="/restaurant/{{ history.restaurant_id }}" class="btn btn-sm btn-outline-custom" title="查看詳情">
-                                                <i class="bi bi-eye"></i>
-                                            </a>
-                                        </div>
+                                        <form action="{{ url_for('favorite.add_favorite') }}" method="POST" class="d-inline">
+                                            <input type="hidden" name="restaurant_name" value="{{ history.restaurant_name }}">
+                                            <input type="hidden" name="category" value="{{ history.category or '' }}">
+                                            <input type="hidden" name="rating" value="{{ history.rating or '' }}">
+                                            <button type="submit" class="btn btn-sm btn-icon text-muted" title="加入我的收藏">
+                                                <i class="bi bi-heart text-danger fs-5 btn-love"></i>
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -116,14 +92,16 @@
                 </nav>
             {% endif %}
         {% else %}
-            <!-- 空白狀態 (Empty State) -->
+            <!-- 空資料提示 (Empty State) -->
             <div class="card glass-card text-center p-5 my-5">
-                <div class="card-body">
+                <div class="card-body py-5">
                     <div class="mb-4">
-                        <i class="bi bi-clock-history text-muted" style="font-size: 5rem; opacity: 0.5;"></i>
+                        <div class="d-inline-flex align-items-center justify-content-center bg-primary-subtle bg-opacity-10 rounded-circle" style="width: 100px; height: 100px;">
+                            <i class="bi bi-clock-history text-primary" style="font-size: 4rem;"></i>
+                        </div>
                     </div>
-                    <h3 class="fw-bold mb-3">尚無推薦歷史紀錄</h3>
-                    <p class="text-muted mb-4">看起來您還沒有使用過隨機美食抽選。快去抽一間心儀的店吧！</p>
+                    <h3 class="fw-bold mb-3 text-light">目前沒有任何推薦歷史紀錄</h3>
+                    <p class="text-muted mb-4 max-w-md mx-auto">看來您還沒有進行過隨機推薦抽選。快去開啟您的美味探索旅程吧！</p>
                     <a href="/" class="btn btn-gradient btn-lg px-4"><i class="bi bi-dice-5 me-2"></i>開始抽選</a>
                 </div>
             </div>
@@ -134,44 +112,45 @@
 
 {% block extra_css %}
 <style>
-    /* 表格樣式微調 */
+    /* 表格樣式優化 */
     .table {
         color: var(--text-main) !important;
     }
     .table-hover tbody tr:hover {
-        background-color: rgba(255, 255, 255, 0.02) !important;
-    }
-    .text-hover-primary:hover {
-        color: #ff4b2b !important;
+        background-color: rgba(255, 255, 255, 0.03) !important;
+        transition: background-color 0.2s ease-in-out;
     }
     .btn-icon {
         background: transparent;
         border: none;
         padding: 0.25rem 0.5rem;
-        transition: all 0.2s;
+        transition: all 0.2s ease;
     }
     .btn-icon:hover {
-        transform: scale(1.2);
+        transform: scale(1.15);
     }
-    .btn-icon.text-muted:hover {
+    .btn-love {
+        transition: color 0.3s ease;
+    }
+    .btn-love:hover {
         color: #ff416c !important;
     }
     
-    /* 分頁元件玻璃擬態 */
+    /* 分頁玻璃擬態 */
     .glass-page {
         background: var(--card-bg) !important;
         border: 1px solid var(--card-border) !important;
         color: var(--text-main) !important;
-        margin: 0 3px;
-        border-radius: 6px !important;
-        transition: all 0.3s;
+        margin: 0 4px;
+        border-radius: 8px !important;
+        transition: all 0.3s ease;
     }
     .glass-page:hover {
         background: rgba(255, 255, 255, 0.1) !important;
         border-color: var(--text-muted) !important;
     }
     .disabled .glass-page {
-        opacity: 0.4;
+        opacity: 0.35;
         pointer-events: none;
     }
     .active-page {
@@ -179,6 +158,9 @@
         border-color: transparent !important;
         color: white !important;
         font-weight: 600;
+    }
+    .max-w-md {
+        max-width: 450px;
     }
 </style>
 {% endblock %}
