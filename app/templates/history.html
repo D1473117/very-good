@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <h2 class="fw-bolder text-dark mb-0 page-title">
+        <i class="bi bi-clock-history me-2" style="color: var(--primary-color);"></i>歷史推薦紀錄
+    </h2>
+</div>
+
+{% if histories %}
+    <div class="history-table-container">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4 py-3 fw-bold border-0">餐廳名稱</th>
+                        <th class="py-3 fw-bold border-0">類型</th>
+                        <th class="py-3 fw-bold border-0">評分</th>
+                        <th class="py-3 fw-bold border-0 text-end pe-4">推薦時間</th>
+                    </tr>
+                </thead>
+                <tbody class="border-top-0">
+                    {% for h in histories %}
+                    <tr>
+                        <td class="ps-4 py-3 fw-bold text-dark">{{ h.restaurant_name }}</td>
+                        <td class="py-3">
+                            <span class="badge badge-category rounded-pill px-3 py-2">{{ h.category or '未分類' }}</span>
+                        </td>
+                        <td class="py-3">
+                            {% if h.rating %}
+                                <div class="d-flex align-items-center gap-1 text-warning fw-bold">
+                                    <i class="bi bi-star-fill"></i> <span class="text-dark">{{ h.rating }}</span>
+                                </div>
+                            {% else %}
+                                <span class="text-muted small">無</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted py-3 text-end pe-4 small fw-medium">
+                            <i class="bi bi-clock me-1 d-none d-md-inline-block"></i>
+                            {{ h.recommended_at.strftime('%Y-%m-%d %H:%M') }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% else %}
+    <div class="empty-state text-center p-5 rounded-4 bg-white mt-4">
+        <div class="empty-icon-wrapper mx-auto mb-4" style="width: 80px; height: 80px; background: #fff5f5; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <i class="bi bi-clock fs-1" style="color: var(--primary-color);"></i>
+        </div>
+        <h4 class="fw-bold text-dark mb-3">尚無推薦紀錄</h4>
+        <p class="text-muted mb-0">您還沒有使用過隨機推薦功能，趕快回到首頁試試手氣吧！</p>
+    </div>
+{% endif %}
+{% endblock %}

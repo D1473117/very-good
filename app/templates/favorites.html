@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <h2 class="fw-bolder text-dark mb-0 page-title">
+        <i class="bi bi-heart-fill me-2" style="color: var(--primary-color);"></i>我的收藏
+    </h2>
+</div>
+
+{% if favorites %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for fav in favorites %}
+        <div class="col">
+            <div class="card h-100 food-card">
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h5 class="card-title fw-bold mb-0 text-truncate pe-2" title="{{ fav.restaurant_name }}">{{ fav.restaurant_name }}</h5>
+                        <span class="badge rounded-pill bg-warning text-dark px-2 py-1 shadow-sm d-flex align-items-center gap-1">
+                            <i class="bi bi-star-fill text-white"></i> 
+                            <span class="fw-bold">{{ fav.rating if fav.rating else '無' }}</span>
+                        </span>
+                    </div>
+                    
+                    <p class="card-text mb-3">
+                        <span class="badge badge-category rounded-pill fs-7 px-3 py-2">
+                            <i class="bi bi-tag-fill me-1"></i> {{ fav.category or '未分類' }}
+                        </span>
+                    </p>
+                    
+                    {% if fav.address %}
+                    <p class="card-text small text-secondary mt-auto mb-0 d-flex align-items-start gap-2">
+                        <i class="bi bi-geo-alt-fill text-muted mt-1"></i>
+                        <span class="text-truncate d-inline-block w-100" title="{{ fav.address }}">{{ fav.address }}</span>
+                    </p>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-white border-top border-light px-4 py-3 d-flex justify-content-between align-items-center">
+                    <small class="text-muted fw-medium"><i class="bi bi-calendar-check me-1"></i> {{ fav.created_at.strftime('%Y-%m-%d') }}</small>
+                    <form action="{{ url_for('favorite.delete_favorite', id=fav.id) }}" method="POST" class="d-inline m-0" onsubmit="return confirm('確定要移除此收藏嗎？');">
+                        <button type="submit" class="btn btn-outline-danger btn-delete fw-medium d-flex align-items-center gap-1">
+                            <i class="bi bi-trash3-fill"></i> 移除
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-state text-center p-5 rounded-4 bg-white mt-4">
+        <div class="empty-icon-wrapper mx-auto mb-4" style="width: 80px; height: 80px; background: #fff5f5; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <i class="bi bi-heartbreak-fill fs-1" style="color: var(--primary-color);"></i>
+        </div>
+        <h4 class="fw-bold text-dark mb-3">目前還沒有收藏唷！</h4>
+        <p class="text-muted mb-0">您還沒有收藏任何餐廳，趕快去探索並點擊愛心收藏喜歡的餐廳吧！</p>
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,112 @@
+/* app/static/css/style.css */
+
+/* Warm food style variables */
+:root {
+    --primary-color: #ff6b6b; /* Warm red/coral */
+    --primary-hover: #fa5252;
+    --secondary-color: #fcc419; /* Warm yellow */
+    --bg-color: #fffaf0; /* Warm off-white / eggshell */
+    --text-main: #495057;
+    --card-shadow: 0 8px 24px rgba(255, 107, 107, 0.06);
+    --hover-shadow: 0 15px 35px rgba(255, 107, 107, 0.15);
+}
+
+body {
+    background-color: var(--bg-color);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: var(--text-main);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Typography & Titles */
+.page-title {
+    letter-spacing: -0.5px;
+}
+
+/* Navbar */
+.navbar {
+    background: linear-gradient(135deg, var(--primary-color), #ff8787) !important;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.2);
+}
+.navbar-brand {
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+.navbar-nav .nav-link {
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+.navbar-nav .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+/* Modern Card Design */
+.food-card {
+    border-radius: 1.25rem;
+    border: 1px solid rgba(0,0,0,0.03);
+    box-shadow: var(--card-shadow);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    background: #ffffff;
+    overflow: hidden;
+}
+.food-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--hover-shadow);
+}
+.food-card .card-title {
+    color: #212529;
+    letter-spacing: -0.3px;
+}
+
+/* Badges */
+.badge-category {
+    background-color: #fff0f0;
+    color: var(--primary-color);
+    font-weight: 600;
+    border: 1px solid #ffe3e3;
+}
+
+/* Buttons */
+.btn-delete {
+    border-radius: 50rem;
+    padding: 0.375rem 1rem;
+    transition: all 0.2s ease;
+    border-width: 1.5px;
+}
+.btn-delete:hover {
+    background-color: #ffe3e3;
+    color: #e03131;
+    border-color: transparent;
+}
+
+/* Table Design */
+.history-table-container {
+    border-radius: 1.25rem;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    background: #ffffff;
+    border: 1px solid rgba(0,0,0,0.03);
+}
+.table {
+    --bs-table-bg: transparent;
+}
+.table > :not(caption) > * > * {
+    padding: 1rem;
+    border-bottom-color: #f8f9fa;
+}
+.table > thead {
+    background-color: #fff5f5;
+    color: var(--primary-color);
+}
+.table > tbody > tr {
+    transition: background-color 0.2s ease;
+}
+.table > tbody > tr:hover {
+    background-color: #fffafaf0;
+}
+
+/* Empty State */
+.empty-state {
+    border: 1px dashed rgba(255, 107, 107, 0.3);
+}
