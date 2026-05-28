@@ -75,6 +75,7 @@ def nearby():
     distance = request.args.get('distance', type=int)
     category = request.args.get('category', '')
     min_rating = request.args.get('rating', type=float)
+    price_list = request.args.getlist('price', type=int)
     
     query = Restaurant.query
     
@@ -89,6 +90,8 @@ def nearby():
         query = query.filter(Restaurant.category == category)
     if min_rating:
         query = query.filter(Restaurant.rating >= min_rating)
+    if price_list:
+        query = query.filter(Restaurant.price_level.in_(price_list))
         
     restaurants = query.all()
     
@@ -110,5 +113,6 @@ def nearby():
         distance=distance,
         category=category,
         rating=min_rating,
+        price_list=price_list,
         fav_ids=fav_ids
     )
