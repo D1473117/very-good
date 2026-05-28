@@ -2,6 +2,7 @@ DROP TABLE IF EXISTS restaurants;
 DROP TABLE IF EXISTS recommendation_history;
 DROP TABLE IF EXISTS favorites;
 
+-- 1. 餐廳資料表
 CREATE TABLE restaurants (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -15,6 +16,7 @@ CREATE TABLE restaurants (
     session_id TEXT                 -- 關聯建立者的 session_id，避免他人看見自訂餐廳
 );
 
+-- 2. 推薦歷史與評論日誌表
 CREATE TABLE recommendation_history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     session_id TEXT,
@@ -29,6 +31,7 @@ CREATE TABLE recommendation_history (
     FOREIGN KEY(restaurant_id) REFERENCES restaurants(id) ON DELETE SET NULL
 );
 
+-- 3. 會員收藏 (口袋名單) 表
 CREATE TABLE favorites (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     session_id TEXT NOT NULL,
@@ -37,4 +40,5 @@ CREATE TABLE favorites (
     FOREIGN KEY(restaurant_id) REFERENCES restaurants(id) ON DELETE CASCADE,
     UNIQUE(session_id, restaurant_id)
 );
+
 

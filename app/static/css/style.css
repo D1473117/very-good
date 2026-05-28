@@ -1,7 +1,7 @@
 body {
-    font-family: 'Inter', sans-serif;
-    background: linear-gradient(135deg, #1f1c2c, #928DAB); /* Default background */
-    background-image: url('https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=1000&auto=format&fit=crop'); /* Aesthetic food bg */
+    font-family: 'Inter', 'Noto Sans TC', sans-serif;
+    background: linear-gradient(135deg, #0f0c1b, #201a30, #2c1b4d); /* 質感暗紫色漸層 */
+    background-image: url('https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=1200&auto=format&fit=crop'); /* 精選美食背景 */
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -11,116 +11,183 @@ body {
     justify-content: center;
     align-items: center;
     margin: 0;
+    position: relative;
+    overflow-x: hidden;
 }
 
-/* Dark overlay for better readability */
+/* 質感暗色遮罩層，增強毛玻璃可讀性與對比度 */
 body::before {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
+    background: radial-gradient(circle at center, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.8) 100%);
     z-index: -1;
 }
 
 .app-container {
     width: 100%;
-    max-width: 400px;
-    padding: 20px;
+    max-width: 440px; /* 稍微加寬，讓排版更為舒展 */
+    padding: 24px 16px;
+    position: relative;
+    z-index: 10;
 }
 
+/* Apple 等級高端雙層毛玻璃面板 */
 .glass-panel {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 24px;
-    padding: 30px 20px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    background: rgba(20, 16, 35, 0.65); /* 更深沉的底色 */
+    backdrop-filter: blur(25px) saturate(180%);
+    -webkit-backdrop-filter: blur(25px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 28px;
+    padding: 32px 24px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 
+                inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    transition: box-shadow 0.5s ease;
 }
 
+.glass-panel:hover {
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6), 
+                0 0 40px rgba(255, 138, 0, 0.1),
+                inset 0 1px 2px rgba(255, 255, 255, 0.15);
+}
+
+/* 漸變霓虹品牌標題 */
 .brand-title {
     font-weight: 800;
-    font-size: 2rem;
-    background: linear-gradient(90deg, #ff8a00, #e52e71);
+    font-size: 2.4rem;
+    background: linear-gradient(90deg, #ff8a00, #ff007a, #e52e71);
+    background-size: 200% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    animation: gradientShift 6s ease infinite;
+    letter-spacing: -1.5px;
+    text-shadow: 0 4px 12px rgba(229, 46, 113, 0.15);
 }
 
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* 半透明質感磨砂卡片 */
 .glass-card {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 16px;
-    padding: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 18px;
+    padding: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.glass-card:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
 .label {
-    font-weight: 600;
-    font-size: 0.9rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
+/* 虛線定位顯示欄，增加微發光 */
 .location-display {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px dashed rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px dashed rgba(255, 255, 255, 0.25);
+    transition: all 0.3s ease;
 }
 
-/* Custom Range Slider */
-.custom-range::-webkit-slider-thumb {
-    background: #ff8a00;
+.location-display:hover {
+    border-color: #ff8a00;
+    background: rgba(255, 138, 0, 0.02);
 }
 
-.custom-range::-moz-range-thumb {
-    background: #ff8a00;
+/* 定位旋轉按鈕懸停動畫 */
+#btn-locate i {
+    display: inline-block;
+    transition: transform 0.4s ease;
+}
+#btn-locate:hover i {
+    transform: rotate(180deg);
 }
 
+/* 高級發光推薦大按鈕 (一鍵抽籤) */
 .btn-recommend {
-    background: linear-gradient(135deg, #ff8a00, #e52e71);
+    background: linear-gradient(135deg, #ff8a00, #ff007a, #e52e71);
+    background-size: 150% auto;
     border: none;
-    border-radius: 16px;
+    border-radius: 20px;
     color: white;
     font-weight: 800;
-    font-size: 1.2rem;
-    padding: 20px;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 10px 20px rgba(229, 46, 113, 0.4);
+    font-size: 1.3rem;
+    padding: 22px;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 10px 30px rgba(229, 46, 113, 0.35),
+                0 0 0 1px rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    overflow: hidden;
 }
 
 .btn-recommend:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 25px rgba(229, 46, 113, 0.5);
+    background-position: right center;
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 16px 40px rgba(229, 46, 113, 0.55),
+                0 0 20px rgba(255, 138, 0, 0.3);
 }
 
 .btn-recommend:active {
-    transform: translateY(2px);
+    transform: translateY(2px) scale(0.98);
+    box-shadow: 0 6px 15px rgba(229, 46, 113, 0.4);
 }
 
+/* 進階過濾卡片展開微過渡 */
 .result-card {
-    animation: fadeInUp 0.5s ease-out forwards;
+    border: 1px solid rgba(255, 138, 0, 0.25);
+    background: linear-gradient(180deg, rgba(20,16,35,0.85) 0%, rgba(35,20,40,0.85) 100%);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45), 
+                0 0 30px rgba(255, 138, 0, 0.15),
+                inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    animation: fadeInUp 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
 }
 
 @keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(20px); }
+    from { opacity: 0; transform: translateY(30px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Slot Overlay */
+/* 精緻滾輪抽籤遮罩層 */
 .slot-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.9);
-    z-index: 1050;
+    background: rgba(5, 3, 10, 0.94);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 2000;
     display: flex;
     justify-content: center;
     align-items: center;
+    animation: fadeInOverlay 0.3s ease-out;
+}
+
+@keyframes fadeInOverlay {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .slot-container {
-    height: 100px;
+    height: 120px;
     overflow: hidden;
     position: relative;
-    width: 80%;
-    background: rgba(255,255,255,0.1);
-    border-radius: 12px;
+    width: 85%;
+    max-width: 360px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 20px;
     border: 2px solid #ff8a00;
+    box-shadow: 0 0 40px rgba(255, 138, 0, 0.35),
+                inset 0 0 20px rgba(0, 0, 0, 0.8);
 }
 
 .slot-names {
@@ -128,252 +195,310 @@ body::before {
     top: 0;
     width: 100%;
     text-align: center;
-    transition: top 3s cubic-bezier(0.1, 0.8, 0.2, 1);
 }
 
 .slot-item {
-    height: 100px;
-    line-height: 100px;
-    font-size: 2rem;
-    font-weight: bold;
+    height: 120px;
+    line-height: 120px;
+    font-size: 2.2rem;
+    font-weight: 800;
     color: #fff;
-    text-shadow: 0 0 10px rgba(255,138,0,0.8);
+    letter-spacing: -0.5px;
+    text-shadow: 0 0 12px rgba(255, 138, 0, 0.8),
+                 0 4px 10px rgba(0, 0, 0, 0.5);
 }
 
 /* ==========================================================================
-   NEW PREMIUM GLASSMORPHISM COMPONENTS
+   PREMIUM GLASSMORPHISM COMPONENTS
    ========================================================================== */
 
-/* Bottom Navigation Bar */
+/* 底部導覽列 (毛玻璃底座) */
 .bottom-nav {
-    border-top: 1px solid rgba(255, 255, 255, 0.15);
-    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    padding-top: 18px;
     width: 100%;
+    display: flex;
+    justify-content: space-around;
 }
 
 .nav-item {
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.45);
     display: flex;
     flex-direction: column;
     align-items: center;
-    font-size: 0.8rem;
-    font-weight: 600;
-    transition: color 0.3s, transform 0.2s, text-shadow 0.3s;
+    font-size: 0.82rem;
+    font-weight: 700;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     cursor: pointer;
-    padding: 5px 10px;
+    padding: 6px 16px;
+    border-radius: 12px;
 }
 
 .nav-item i {
-    font-size: 1.4rem;
-    margin-bottom: 2px;
-    transition: transform 0.2s;
+    font-size: 1.5rem;
+    margin-bottom: 3px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .nav-item:hover {
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.04);
 }
 
 .nav-item:hover i {
-    transform: translateY(-2px);
+    transform: translateY(-3px) scale(1.1);
 }
 
 .nav-item.active {
     color: #ff8a00;
-    text-shadow: 0 0 10px rgba(255, 138, 0, 0.5);
-    transform: scale(1.08);
+    background: rgba(255, 138, 0, 0.08);
+    text-shadow: 0 0 15px rgba(255, 138, 0, 0.4);
+    transform: scale(1.05);
 }
 
 .nav-item.active i {
     color: #ff8a00;
-    transform: translateY(-2px) scale(1.05);
+    transform: translateY(-3px) scale(1.15);
+    filter: drop-shadow(0 0 5px rgba(255, 138, 0, 0.6));
 }
 
-/* Tab Animation */
+/* 頁籤切換過渡 */
 .tab-content {
-    animation: fadeIn 0.4s ease-out forwards;
+    animation: fadeIn 0.45s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
 }
 
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
+    from { opacity: 0; transform: translateY(12px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Glass Input & Select Elements */
+/* 高質感輸入框與下拉選單 */
 .glass-input {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
     color: white !important;
     border-radius: 12px !important;
-    padding: 10px 15px !important;
-    transition: border-color 0.3s, box-shadow 0.3s !important;
+    padding: 11px 16px !important;
+    font-size: 0.9rem !important;
+    transition: all 0.3s ease !important;
 }
 
 .glass-input::placeholder {
-    color: rgba(255, 255, 255, 0.3) !important;
+    color: rgba(255, 255, 255, 0.25) !important;
 }
 
 .glass-input:focus {
-    background: rgba(255, 255, 255, 0.08) !important;
+    background: rgba(255, 255, 255, 0.07) !important;
     border-color: #ff8a00 !important;
-    box-shadow: 0 0 0 0.25rem rgba(255, 138, 0, 0.25) !important;
+    box-shadow: 0 0 0 0.25rem rgba(255, 138, 0, 0.2) !important;
     outline: none !important;
 }
 
 .glass-input option {
-    background: #252136;
+    background: #191629;
     color: white;
 }
 
-/* Custom Switches & Checkboxes */
-.custom-switch .form-check-input {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-    height: 1.5em;
-    width: 2.75em;
+/* 滑桿美化 (Custom Range Sliders) */
+.custom-range {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    outline: none;
+    -webkit-appearance: none;
+    transition: background 0.3s;
+}
+
+.custom-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff8a00, #ff007a);
     cursor: pointer;
-    transition: background-color 0.3s, border-color 0.3s, background-position 0.2s ease-in-out;
+    box-shadow: 0 0 10px rgba(255, 138, 0, 0.5);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.custom-range::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 15px rgba(255, 138, 0, 0.7);
+}
+
+.custom-range::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff8a00, #ff007a);
+    cursor: pointer;
+    box-shadow: 0 0 10px rgba(255, 138, 0, 0.5);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.custom-range::-moz-range-thumb:hover {
+    transform: scale(1.2);
+    box-shadow: 0 0 15px rgba(255, 138, 0, 0.7);
+}
+
+/* 特製開關樣式 (Custom Switches) */
+.custom-switch .form-check-input {
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.18);
+    height: 1.6em;
+    width: 2.9em;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .custom-switch .form-check-input:checked {
     background-color: #ff8a00;
     border-color: #ff8a00;
-    box-shadow: 0 0 10px rgba(255, 138, 0, 0.5);
+    box-shadow: 0 0 12px rgba(255, 138, 0, 0.6);
 }
 
 .custom-switch .form-check-input:focus {
-    box-shadow: 0 0 0 0.25rem rgba(255, 138, 0, 0.25);
+    box-shadow: 0 0 0 0.25rem rgba(255, 138, 0, 0.2);
     border-color: #ff8a00;
 }
 
-/* Custom Multi-select Badges (饮食避雷针) */
+/* 多選式分類膠囊標籤 (防雷篩選) */
 .category-badge {
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    color: white;
-    border-radius: 20px;
-    padding: 6px 14px;
-    font-size: 0.8rem;
-    font-weight: 600;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.75);
+    border-radius: 24px;
+    padding: 7px 15px;
+    font-size: 0.82rem;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.2s ease-in-out;
+    transition: all 0.25s ease;
     user-select: none;
 }
 
 .category-badge:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.22);
+    color: white;
 }
 
 .category-badge.excluded {
-    background: rgba(229, 46, 113, 0.2);
-    border-color: #e52e71;
+    background: rgba(229, 46, 113, 0.15);
+    border-color: rgba(229, 46, 113, 0.7);
     color: #ff4a8b;
-    text-shadow: 0 0 5px rgba(229, 46, 113, 0.3);
-    box-shadow: inset 0 0 8px rgba(229, 46, 113, 0.15);
+    text-shadow: 0 0 6px rgba(229, 46, 113, 0.4);
+    box-shadow: 0 0 12px rgba(229, 46, 113, 0.25), 
+                inset 0 0 8px rgba(229, 46, 113, 0.2);
 }
 
-/* Heart Favorite Button */
+/* 收藏愛心點擊特效 */
 .btn-favorite-heart {
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.4);
-    font-size: 1.6rem;
-    top: 15px;
-    right: 15px;
-    padding: 5px;
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 1.7rem;
+    top: 16px;
+    right: 16px;
+    padding: 6px;
     cursor: pointer;
-    transition: color 0.3s, transform 0.2s, text-shadow 0.3s;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .btn-favorite-heart:hover {
-    color: #e52e71;
-    transform: scale(1.15);
+    color: #ff0055;
+    transform: scale(1.2);
+    filter: drop-shadow(0 0 5px rgba(255, 0, 85, 0.3));
 }
 
 .btn-favorite-heart:active {
-    transform: scale(0.9);
+    transform: scale(0.85);
 }
 
 .btn-favorite-heart.active {
-    color: #e52e71;
-    animation: heartbeat 0.4s ease-out;
-    text-shadow: 0 0 10px rgba(229, 46, 113, 0.6);
+    color: #ff0055;
+    animation: heartbeat 0.45s cubic-bezier(0.25, 0.8, 0.25, 1.2);
+    filter: drop-shadow(0 0 8px rgba(255, 0, 85, 0.6));
 }
 
 @keyframes heartbeat {
     0% { transform: scale(1); }
-    30% { transform: scale(1.3); }
-    60% { transform: scale(0.9); }
+    35% { transform: scale(1.35); }
+    60% { transform: scale(0.85); }
     100% { transform: scale(1); }
 }
 
-/* Glass Cards for Lists */
+/* 卡片清單 3D 位移微懸停特效 */
 .fav-item-card, .history-item-card {
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 15px;
-    transition: transform 0.2s, background 0.3s, border-color 0.3s, box-shadow 0.3s;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 18px;
+    padding: 18px;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     position: relative;
     overflow: hidden;
 }
 
 .fav-item-card:hover, .history-item-card:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.18);
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25),
+                0 0 15px rgba(255, 255, 255, 0.03);
 }
 
+/* 私房標籤漸變背景 */
 .custom-badge {
-    background: linear-gradient(135deg, #ff8a00, #e52e71);
+    background: linear-gradient(135deg, #ff8a00, #ff007a);
     color: white;
-    font-size: 0.65rem;
+    font-size: 0.68rem;
     font-weight: 800;
-    padding: 2px 8px;
+    padding: 3px 9px;
     border-radius: 8px;
     letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(255, 0, 122, 0.3);
 }
 
-/* Star Rating System */
+/* 互動星級評分系統 (Star Rating with Glow) */
 .star-rating {
     display: inline-flex;
-    gap: 5px;
+    gap: 6px;
 }
 
 .star-rating i {
-    font-size: 1.4rem;
-    color: rgba(255, 255, 255, 0.25);
+    font-size: 1.45rem;
+    color: rgba(255, 255, 255, 0.2);
     cursor: pointer;
-    transition: color 0.2s, transform 0.2s, text-shadow 0.2s;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .star-rating i:hover {
-    transform: scale(1.25);
+    transform: scale(1.3);
 }
 
 .star-rating i.active {
     color: #ffc107;
-    text-shadow: 0 0 10px rgba(255, 193, 7, 0.6);
+    filter: drop-shadow(0 0 6px rgba(255, 193, 7, 0.6));
 }
 
-/* Pulse Animation */
+/* 呼吸脈搏動畫 */
 .animate-pulse {
-    animation: pulse 2s infinite;
+    animation: pulse 2.5s infinite ease-in-out;
 }
 
 @keyframes pulse {
     0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.05); opacity: 0.85; }
+    50% { transform: scale(1.06); opacity: 0.88; }
     100% { transform: scale(1); opacity: 1; }
 }
 
-/* Scrollbars styling for lists */
+/* 客製化順暢細滾動條 (Scrollbars) */
 .favorites-list-container, .history-list-container {
     max-height: 480px;
     overflow-y: auto;
-    padding-right: 5px;
+    padding-right: 6px;
 }
 
 .favorites-list-container::-webkit-scrollbar,
@@ -383,18 +508,18 @@ body::before {
 
 .favorites-list-container::-webkit-scrollbar-track,
 .history-list-container::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.02);
+    background: rgba(255, 255, 255, 0.01);
     border-radius: 10px;
 }
 
 .favorites-list-container::-webkit-scrollbar-thumb,
 .history-list-container::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.12);
     border-radius: 10px;
+    transition: background 0.3s;
 }
 
 .favorites-list-container::-webkit-scrollbar-thumb:hover,
 .history-list-container::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.28);
 }
-

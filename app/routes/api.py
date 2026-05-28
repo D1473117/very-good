@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, session
-from app.models.restaurant import recommend_restaurant, add_custom_restaurant
-from app.models.history import add_history, get_history, update_history_feedback, delete_history
+from app.models.restaurant import recommend_restaurant, add_custom_restaurant, get_all_restaurants
+from app.models.history import add_history, get_history, delete_history, update_history_feedback
 from app.models.favorite import add_favorite, remove_favorite, is_favorite, get_favorites
 from app.models.database import get_db_connection
 import uuid
@@ -8,6 +8,9 @@ import uuid
 api_bp = Blueprint('api', __name__, url_prefix='/api')
 
 def init_session():
+    """
+    初始化 Session，若無則生成唯一識別碼 UUID。
+    """
     if 'session_id' not in session:
         session['session_id'] = str(uuid.uuid4())
 
@@ -29,37 +32,29 @@ def recommend():
         distance = 5
         
     try:
-        min_rating = float(data.get('min_rating', 0.0))
-    except ValueError:
-        min_rating = 0.0
-        
-    categories_exclude = data.get('categories_exclude', [])
-    only_favorites = bool(data.get('only_favorites', False))
-    
-    try:
-        lat_float = float(lat) if lat else None
-        lng_float = float(lng) if lng else None
+        lat_float = float(lat) if lat is not None else None
+        lng_float = float(lng) if lng is not None else None
     except ValueError:
         lat_float = None
         lng_float = None
         
+    min_rating = float(data.get('min_rating', 0.0))
+    categories_exclude = data.get('categories_exclude', [])
+    only_favorites = bool(data.get('only_favorites', False))
+    
     result = recommend_restaurant(
         lat_float, lng_float, 
         max_distance_km=distance, 
         budget_level=budget,
-        categories_exclude=categories_exclude,
+        session_id=session['session_id'],
         min_rating=min_rating,
-        only_favorites=only_favorites,
-        session_id=session['session_id']
+        categories_exclude=categories_exclude,
+        only_favorites=only_favorites
     )
     
     if result:
-        # 紀錄歷史，此處包含真實的 restaurant_id 關聯
+        # 紀錄推薦歷史
         add_history(session['session_id'], result['id'], result['name'], result['lat'], result['lng'])
-        
-        # 檢查該推薦結果是否已被此用戶收藏
-        result['is_favorite'] = is_favorite(session['session_id'], result['id'])
-        
         return jsonify({
             'success': True,
             'data': result
@@ -67,7 +62,7 @@ def recommend():
     else:
         return jsonify({
             'success': False,
-            'message': '附近沒有符合篩選條件的餐廳喔！請調整防雷條件或換個位置再試試！'
+            'message': '附近沒有符合篩選條件的餐廳喔！請調整預算、距離範圍，或在避雷針關閉部分排除分類再試試！'
         }), 404
 
 @api_bp.route('/categories', methods=['GET'])
@@ -75,11 +70,14 @@ def get_categories():
     init_session()
     conn = get_db_connection()
     try:
+        # 動態抓取系統內建以及該用戶新增的私房分類
         rows = conn.execute(
-            'SELECT DISTINCT category FROM restaurants WHERE is_custom = 0 OR session_id = ?',
+            '''SELECT DISTINCT category FROM restaurants 
+               WHERE is_custom = 0 OR (is_custom = 1 AND session_id = ?)
+               ORDER BY category ASC''',
             (session['session_id'],)
         ).fetchall()
-        categories = [row['category'] for row in rows]
+        categories = [row['category'] for row in rows if row['category']]
         return jsonify({
             'success': True,
             'data': categories
@@ -112,12 +110,15 @@ def toggle_favorite():
     init_session()
     data = request.get_json() or {}
     restaurant_id = data.get('restaurant_id')
+    
     if not restaurant_id:
-        return jsonify({'success': False, 'message': '缺少餐廳 ID'}), 400
+        return jsonify({'success': False, 'message': '餐廳 ID 缺失！'}), 400
         
     try:
-        currently_fav = is_favorite(session['session_id'], restaurant_id)
-        if currently_fav:
+        restaurant_id = int(restaurant_id)
+        fav_status = is_favorite(session['session_id'], restaurant_id)
+        
+        if fav_status:
             remove_favorite(session['session_id'], restaurant_id)
             new_status = False
         else:
@@ -138,49 +139,52 @@ def toggle_favorite():
 def create_custom_restaurant():
     init_session()
     data = request.get_json() or {}
-    name = data.get('name')
-    category = data.get('category')
-    google_maps_url = data.get('google_maps_url', '')
+    name = data.get('name', '').strip()
+    category = data.get('category', '').strip()
     
     if not name or not category:
-        return jsonify({'success': False, 'message': '名稱與分類為必填欄位！'}), 400
+        return jsonify({'success': False, 'message': '餐廳名稱與分類皆為必填欄位！'}), 400
         
     try:
         budget_level = int(data.get('budget_level', 1))
     except ValueError:
         budget_level = 1
         
-    # 定位若為空，預設為台北市中心
-    try:
-        lat = float(data.get('lat', 25.041))
-        lng = float(data.get('lng', 121.536))
-    except (ValueError, TypeError):
-        lat = 25.041
-        lng = 121.536
+    google_maps_url = data.get('google_maps_url', '').strip()
+    if not google_maps_url:
+        google_maps_url = f"https://maps.google.com/?q={name}"
         
+    # 預設台北大安中心坐標，若能在 Session 中找到最新推薦或定位可替換，
+    # 這裡採用計畫中的 Fallback 決策 (25.041, 121.536)
+    lat = 25.041
+    lng = 121.536
+    
     try:
-        # 新增自訂餐廳
         new_id = add_custom_restaurant(
-            session_id=session['session_id'],
-            name=name,
-            category=category,
-            lat=lat,
-            lng=lng,
-            rating=5.0, # 自訂餐廳預設給 5.0 優良評價
-            budget_level=budget_level,
-            google_maps_url=google_maps_url or f"https://maps.google.com/?q={name}"
+            session['session_id'], 
+            name, category, 
+            lat, lng, 
+            rating=5.0, 
+            budget_level=budget_level, 
+            google_maps_url=google_maps_url
         )
         
         if new_id:
-            # 新增成功後，自動將其加入我的收藏 (口袋名單)
+            # 決策優化：自動加入收藏口袋名單中
             add_favorite(session['session_id'], new_id)
             return jsonify({
                 'success': True,
-                'message': '成功新增自訂私房餐廳，並已自動加入收藏！',
-                'data': {'id': new_id, 'name': name, 'category': category}
+                'message': f'成功新增私房餐廳「{name}」，並已自動加入口袋名單！',
+                'data': {
+                    'id': new_id,
+                    'name': name,
+                    'category': category,
+                    'budget_level': budget_level,
+                    'google_maps_url': google_maps_url
+                }
             })
         else:
-            return jsonify({'success': False, 'message': '新增失敗，請檢查輸入內容！'}), 500
+            return jsonify({'success': False, 'message': '資料庫新增餐廳失敗！'}), 500
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
@@ -205,20 +209,26 @@ def save_feedback(history_id):
     data = request.get_json() or {}
     
     try:
-        user_rating = int(data.get('user_rating'))
-    except (ValueError, TypeError):
-        return jsonify({'success': False, 'message': '評分必須為 1-5 的整數！'}), 400
+        user_rating = int(data.get('user_rating', 0))
+    except ValueError:
+        user_rating = 0
         
-    comment = data.get('comment', '')
+    comment = data.get('comment', '').strip()
     
+    if user_rating < 1 or user_rating > 5:
+        return jsonify({'success': False, 'message': '評分星等必須介於 1 至 5 顆星之間！'}), 400
+        
     try:
         success = update_history_feedback(session['session_id'], history_id, user_rating, comment)
         if success:
-            return jsonify({'success': True, 'message': '感謝您的真實心得回饋！'})
+            return jsonify({'success': True, 'message': '感謝您的美食心得真實回饋！'})
         else:
-            return jsonify({'success': False, 'message': '評估失敗，請確認該歷史紀錄屬於您。'}), 404
+            return jsonify({'success': False, 'message': '更新失敗，請確認該歷史紀錄屬於您。'}), 404
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
 
 @api_bp.route('/history/<int:history_id>', methods=['DELETE'])
 def delete_history_entry(history_id):
@@ -230,5 +240,7 @@ def delete_history_entry(history_id):
         else:
             return jsonify({'success': False, 'message': '刪除失敗，請確認該歷史紀錄屬於您。'}), 404
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
-
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500

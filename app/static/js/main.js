@@ -267,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         setTimeout(() => {
             slotNames.style.transition = 'top 3s cubic-bezier(0.1, 0.8, 0.2, 1)';
-            slotNames.style.top = `-${20 * 100}px`;
+            slotNames.style.top = `-${20 * 120}px`; // 配合 style.css 中的 .slot-item 高度 120px
         }, 50);
         
         setTimeout(() => {

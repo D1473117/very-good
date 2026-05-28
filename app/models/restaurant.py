@@ -2,116 +2,242 @@ from app.models.database import get_db_connection
 import random
 import math
 
-def get_all_restaurants(session_id=None):
-    conn = get_db_connection()
-    if session_id:
-        restaurants = conn.execute(
-            'SELECT * FROM restaurants WHERE is_custom = 0 OR (is_custom = 1 AND session_id = ?)',
-            (session_id,)
-        ).fetchall()
-    else:
-        restaurants = conn.execute('SELECT * FROM restaurants WHERE is_custom = 0').fetchall()
-    conn.close()
-    return [dict(row) for row in restaurants]
+# ==========================================================================
+# 1. 實作技能要求：標準 CRUD 函式 (Dictionary-based)
+# ==========================================================================
 
-def add_custom_restaurant(session_id, name, category, lat, lng, rating=5.0, budget_level=1, google_maps_url=None):
+def create(data):
+    """
+    新增一筆餐廳記錄。
+    
+    Args:
+        data (dict): 包含餐廳欄位鍵值的字典，欄位：name, category, lat, lng, rating, budget_level, google_maps_url, is_custom, session_id
+        
+    Returns:
+        int: 新增成功後產生的餐廳 ID，若失敗回傳 None。
+    """
     conn = get_db_connection()
-    cursor = conn.cursor()
+    new_id = None
     try:
-        cursor.execute(
+        cursor = conn.execute(
             '''INSERT INTO restaurants 
                (name, category, lat, lng, rating, budget_level, google_maps_url, is_custom, session_id) 
-               VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)''',
-            (name, category, lat, lng, rating, budget_level, google_maps_url, session_id)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            (
+                data.get('name'),
+                data.get('category'),
+                data.get('lat', 25.041),
+                data.get('lng', 121.536),
+                data.get('rating', 5.0),
+                data.get('budget_level', 1),
+                data.get('google_maps_url'),
+                data.get('is_custom', 0),
+                data.get('session_id')
+            )
         )
         conn.commit()
         new_id = cursor.lastrowid
-        return new_id
     except Exception as e:
-        print(f"Error adding custom restaurant: {e}")
+        print(f"Error creating restaurant: {e}")
+    finally:
+        conn.close()
+    return new_id
+
+def get_all(session_id=None):
+    """
+    取得所有餐廳記錄。
+    若帶入 session_id，則回傳該用戶可看見的所有餐廳（系統 + 自訂）。
+    """
+    conn = get_db_connection()
+    try:
+        if session_id:
+            rows = conn.execute(
+                'SELECT * FROM restaurants WHERE is_custom = 0 OR (is_custom = 1 AND session_id = ?)',
+                (session_id,)
+            ).fetchall()
+        else:
+            rows = conn.execute('SELECT * FROM restaurants').fetchall()
+        return [dict(row) for row in rows]
+    except Exception as e:
+        print(f"Error getting all restaurants: {e}")
+        return []
+    finally:
+        conn.close()
+
+def get_by_id(restaurant_id):
+    """
+    取得單筆餐廳記錄。
+    """
+    conn = get_db_connection()
+    try:
+        row = conn.execute('SELECT * FROM restaurants WHERE id = ?', (restaurant_id,)).fetchone()
+        return dict(row) if row else None
+    except Exception as e:
+        print(f"Error getting restaurant by id: {e}")
         return None
     finally:
         conn.close()
 
+def update(restaurant_id, data):
+    """
+    更新餐廳記錄。
+    """
+    conn = get_db_connection()
+    try:
+        conn.execute(
+            '''UPDATE restaurants 
+               SET name = ?, category = ?, lat = ?, lng = ?, rating = ?, budget_level = ?, google_maps_url = ?, is_custom = ?, session_id = ?
+               WHERE id = ?''',
+            (
+                data.get('name'),
+                data.get('category'),
+                data.get('lat'),
+                data.get('lng'),
+                data.get('rating'),
+                data.get('budget_level'),
+                data.get('google_maps_url'),
+                data.get('is_custom'),
+                data.get('session_id'),
+                restaurant_id
+            )
+        )
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error updating restaurant: {e}")
+        return False
+    finally:
+        conn.close()
+
+def delete(restaurant_id):
+    """
+    刪除餐廳記錄。
+    """
+    conn = get_db_connection()
+    try:
+        conn.execute('DELETE FROM restaurants WHERE id = ?', (restaurant_id,))
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error deleting restaurant: {e}")
+        return False
+    finally:
+        conn.close()
+
+
+# ==========================================================================
+# 2. 專案特有：推薦與自訂私房菜核心邏輯
+# ==========================================================================
+
+def get_all_restaurants(session_id=None):
+    """
+    相容方法：獲取所有當前使用者可見的餐廳。
+    """
+    return get_all(session_id)
+
+def add_custom_restaurant(session_id, name, category, lat, lng, rating=5.0, budget_level=1, google_maps_url=None):
+    """
+    相容方法：新增自訂私房餐廳至資料庫。
+    """
+    return create({
+        'name': name,
+        'category': category,
+        'lat': lat,
+        'lng': lng,
+        'rating': rating,
+        'budget_level': budget_level,
+        'google_maps_url': google_maps_url,
+        'is_custom': 1,
+        'session_id': session_id
+    })
+
 def calculate_distance(lat1, lon1, lat2, lon2):
-    # 使用 Haversine 公式計算地球表面兩點距離 (公里)
+    """
+    使用 Haversine 公式計算地球表面兩點距離 (公里)，並乘上台灣道路蜿蜒係數 1.4。
+    """
     R = 6371.0
     dlat = math.radians(lat2 - lat1)
     dlon = math.radians(lon2 - lon1)
     a = math.sin(dlat / 2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2)**2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     straight_distance = R * c
-    
-    # 由於直線距離 (鳥飛距離) 往往比實際道路距離短，
-    # 在台灣市區加上約 1.3 ~ 1.4 倍的道路蜿蜒常數 (Route factor)，能更貼近實際騎車距離。
     return straight_distance * 1.4
 
-def recommend_restaurant(user_lat, user_lng, max_distance_km=5, budget_level=3, 
-                         categories_exclude=None, categories_only=None, min_rating=0.0, 
-                         only_favorites=False, session_id=None):
+def recommend_restaurant(user_lat, user_lng, max_distance_km=5, budget_level=3, session_id=None, min_rating=0.0, categories_exclude=None, only_favorites=False):
+    """
+    核心推薦篩選演算法。
+    支援預算、評分、飲食避雷針、口袋名單、地理距離篩選以及 Fallback 機制。
+    """
     conn = get_db_connection()
-    
-    # 步驟 1：依收藏篩選或常規查詢
     if only_favorites and session_id:
-        # 只從收藏中抽取
-        query = '''
-            SELECT r.* FROM restaurants r
-            JOIN favorites f ON r.id = f.restaurant_id
-            WHERE f.session_id = ? AND (r.is_custom = 0 OR (r.is_custom = 1 AND r.session_id = ?))
-        '''
-        rows = conn.execute(query, (session_id, session_id)).fetchall()
+        rows = conn.execute(
+            '''SELECT r.* 
+               FROM favorites f
+               JOIN restaurants r ON f.restaurant_id = r.id
+               WHERE f.session_id = ?''',
+            (session_id,)
+        ).fetchall()
     else:
-        # 全域或 session 自訂餐廳
         if session_id:
-            query = 'SELECT * FROM restaurants WHERE is_custom = 0 OR (is_custom = 1 AND session_id = ?)'
-            rows = conn.execute(query, (session_id,)).fetchall()
+            rows = conn.execute(
+                'SELECT * FROM restaurants WHERE is_custom = 0 OR (is_custom = 1 AND session_id = ?)',
+                (session_id,)
+            ).fetchall()
         else:
-            query = 'SELECT * FROM restaurants WHERE is_custom = 0'
-            rows = conn.execute(query).fetchall()
-            
+            rows = conn.execute('SELECT * FROM restaurants WHERE is_custom = 0').fetchall()
     conn.close()
+    
     restaurants = [dict(row) for row in rows]
     
-    # 步驟 2：進階過濾（排除分類、指定分類、最低評分、預算）
+    # 步驟 1：預算、最低評分、避雷針標籤篩選
     filtered = []
+    exclude_set = set(categories_exclude) if categories_exclude else set()
+    
     for r in restaurants:
-        # 1. 預算過濾
+        # 預算過濾
         if budget_level and r['budget_level'] > budget_level:
             continue
             
-        # 2. 飲食避雷針：排除特定分類
-        if categories_exclude and r['category'] in categories_exclude:
+        # 最低評分過濾
+        rating = r['rating'] if r['rating'] is not None else 5.0
+        if rating < min_rating:
             continue
             
-        # 3. 指定分類
-        if categories_only and r['category'] not in categories_only:
-            continue
-            
-        # 4. 最低評分
-        rating_val = r['rating'] if r['rating'] is not None else 0.0
-        if rating_val < min_rating:
+        # 飲食避雷針過濾
+        if r['category'] in exclude_set:
             continue
             
         filtered.append(r)
         
     if not filtered:
-        return None # 沒有符合條件的餐廳
+        return None # 沒有符合基礎條件的餐廳
         
-    # 步驟 3：再用距離篩選
+    # 步驟 2：距離篩選
     distance_filtered = []
-    if user_lat is not None and user_lng is not None:
-        for r in filtered:
-            dist = calculate_distance(user_lat, user_lng, r['lat'], r['lng'])
-            if dist <= max_distance_km:
-                distance_filtered.append(r)
-    else:
-        distance_filtered = filtered
+    # 若使用者拒絕定位且未選擇地標，預設使用台北大安中心坐標 (25.041, 121.536) 作為基準
+    ref_lat = user_lat if user_lat is not None else 25.041
+    ref_lng = user_lng if user_lng is not None else 121.536
+    
+    for r in filtered:
+        dist = calculate_distance(ref_lat, ref_lng, r['lat'], r['lng'])
+        if dist <= max_distance_km:
+            distance_filtered.append(r)
         
-    # 步驟 4：Fallback 機制 (若距離篩選無結果，則退回沒有距離限制的篩選結果)
+    # 步驟 3：Fallback 備用機制 (若距離篩選無結果，則退回沒有距離限制的篩選結果)
     if not distance_filtered:
         distance_filtered = filtered
         
     if not distance_filtered:
         return None
         
-    return random.choice(distance_filtered)
+    # 隨機選出一家
+    chosen = random.choice(distance_filtered)
+    
+    # 附帶檢查當前 Session 收藏狀態
+    if session_id:
+        from app.models.favorite import is_favorite
+        chosen['is_favorite'] = is_favorite(session_id, chosen['id'])
+    else:
+        chosen['is_favorite'] = False
+        
+    return chosen
