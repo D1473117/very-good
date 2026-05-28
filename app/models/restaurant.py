@@ -4,11 +4,7 @@ from app.models.base import get_db_connection
 def init_db():
     conn = get_db_connection()
     
-    # We drop and recreate tables to ensure smooth schema upgrade in local development.
-    # To preserve user data in production we would run migration scripts, but for local MVP,
-    # recreating table ensures all column changes are correctly reflected.
-    conn.execute('DROP TABLE IF EXISTS Restaurant')
-    
+    # We only create tables if they do not exist yet, preserving existing user data.
     conn.execute('''
         CREATE TABLE IF NOT EXISTS Restaurant (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -118,3 +114,124 @@ def get_random_restaurant(category=None, price_level=None, min_rating=None, user
             selected['is_favorited'] = False
         return selected
     return None
+
+def create_restaurant(data):
+    """
+    新增一筆餐廳記錄。
+    
+    :param data: 包含餐廳欄位值的字典 (name 必填)
+    :return: 新增成功的餐廳 ID，若失敗則回傳 None
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            INSERT INTO Restaurant (place_id, name, address, rating, user_ratings_total, open_hours, photo_url, latitude, longitude, price_level, category, signature)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (
+            data.get('place_id'),
+            data['name'],
+            data.get('address'),
+            data.get('rating'),
+            data.get('user_ratings_total'),
+            data.get('open_hours'),
+            data.get('photo_url'),
+            data.get('latitude'),
+            data.get('longitude'),
+            data.get('price_level'),
+            data.get('category'),
+            data.get('signature')
+        ))
+        conn.commit()
+        new_id = cursor.lastrowid
+        conn.close()
+        return new_id
+    except Exception as e:
+        print(f"Error creating restaurant: {e}")
+        return None
+
+def get_all_restaurants():
+    """
+    取得所有餐廳記錄。
+    
+    :return: 餐廳字典列表
+    """
+    try:
+        conn = get_db_connection()
+        restaurants = conn.execute('SELECT * FROM Restaurant').fetchall()
+        conn.close()
+        return [dict(r) for r in restaurants]
+    except Exception as e:
+        print(f"Error getting all restaurants: {e}")
+        return []
+
+def get_restaurant_by_id(restaurant_id):
+    """
+    根據 ID 取得單筆餐廳記錄。
+    
+    :param restaurant_id: 餐廳主鍵 ID
+    :return: 餐廳字典，若不存在則回傳 None
+    """
+    try:
+        conn = get_db_connection()
+        restaurant = conn.execute('SELECT * FROM Restaurant WHERE id = ?', (restaurant_id,)).fetchone()
+        conn.close()
+        return dict(restaurant) if restaurant else None
+    except Exception as e:
+        print(f"Error getting restaurant by id {restaurant_id}: {e}")
+        return None
+
+def update_restaurant(restaurant_id, data):
+    """
+    更新指定 ID 的餐廳記錄。
+    
+    :param restaurant_id: 餐廳主鍵 ID
+    :param data: 包含欲更新欄位值的字典
+    :return: 更新是否成功 (True/False)
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Build dynamic update query
+        fields = []
+        params = []
+        for key in ['place_id', 'name', 'address', 'rating', 'user_ratings_total', 'open_hours', 'photo_url', 'latitude', 'longitude', 'price_level', 'category', 'signature']:
+            if key in data:
+                fields.append(f"{key} = ?")
+                params.append(data[key])
+                
+        if not fields:
+            conn.close()
+            return False
+            
+        params.append(restaurant_id)
+        query = f"UPDATE Restaurant SET {', '.join(fields)} WHERE id = ?"
+        cursor.execute(query, params)
+        rows_affected = cursor.rowcount
+        conn.commit()
+        conn.close()
+        return rows_affected > 0
+    except Exception as e:
+        print(f"Error updating restaurant {restaurant_id}: {e}")
+        return False
+
+def delete_restaurant(restaurant_id):
+    """
+    刪除指定 ID 的餐廳記錄。
+    
+    :param restaurant_id: 餐廳主鍵 ID
+    :return: 刪除是否成功 (True/False)
+    """
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM Restaurant WHERE id = ?', (restaurant_id,))
+        rows_affected = cursor.rowcount
+        conn.commit()
+        conn.close()
+        return rows_affected > 0
+    except Exception as e:
+        print(f"Error deleting restaurant {restaurant_id}: {e}")
+        return False
+
