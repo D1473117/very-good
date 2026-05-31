@@ -3,3 +3,6 @@
 __pycache__/
 *.pyc
 instance/
+docs/chat_history.md
+docs/chat_history.pdf
+docs/chat_history.html
