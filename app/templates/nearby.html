@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center text-white">
+    <div class="col-md-10 col-lg-8">
+        
+        <!-- Header Section -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+            <h2 class="fw-bolder mb-0 page-title">
+                <i class="bi bi-geo-alt-fill me-2 text-danger"></i>附近餐廳列表
+            </h2>
+            <a href="/" class="btn btn-outline-light rounded-pill px-3 py-2">
+                <i class="bi bi-arrow-left me-1"></i>回首頁抽選
+            </a>
+        </div>
+
+        <div class="mb-4">
+            <span class="badge rounded-pill bg-light-translucent py-2 px-3">
+                <i class="bi bi-radar me-1 text-info animate-pulse"></i>
+                正在搜尋半徑 {{ search_distance | int }} 公尺內的餐飲商家（中心點：緯度 {{ user_lat | round(4) }}, 經度 {{ user_lng | round(4) }}）
+            </span>
+        </div>
+
+        <!-- Restaurants List -->
+        {% if restaurants %}
+            <div class="row row-cols-1 g-3">
+                {% for rest in restaurants %}
+                <div class="col">
+                    <div class="card glass-card border-0 shadow-sm rounded-4 overflow-hidden p-3 transition-all hover-bounce text-white">
+                        <div class="row g-3 align-items-center">
+                            <!-- Left: Food details -->
+                            <div class="col-sm-8">
+                                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                                    <span class="badge bg-primary rounded-pill px-2.5 py-1">{{ rest.category }}</span>
+                                    <span class="badge bg-success rounded-pill px-2.5 py-1">{{ rest.price_range }}</span>
+                                    <span class="badge bg-info text-dark rounded-pill px-2.5 py-1 fw-bold">
+                                        <i class="bi bi-signpost-split me-1"></i>距離 {{ rest.temp_distance }}m
+                                    </span>
+                                </div>
+                                <h3 class="fw-bold mb-2">{{ rest.name }}</h3>
+                                
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="text-warning me-2">
+                                        {% set rating_int = rest.rating | int %}
+                                        {% for i in range(5) %}
+                                            {% if i < rating_int %}
+                                                <i class="bi bi-star-fill"></i>
+                                            {% else %}
+                                                <i class="bi bi-star"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    <span class="small opacity-75">({{ rest.rating }}分)</span>
+                                </div>
+
+                                <p class="small opacity-75 mb-0"><i class="bi bi-map-fill me-2 text-info"></i>{{ rest.address }}</p>
+                            </div>
+                            
+                            <!-- Right: Action Buttons -->
+                            <div class="col-sm-4 text-sm-end">
+                                <div class="d-flex flex-sm-column gap-2 justify-content-end">
+                                    <a href="{{ url_for('restaurant.detail', id=rest.id) }}" class="btn btn-outline-light rounded-pill px-3 py-2 fw-medium">
+                                        <i class="bi bi-search me-1"></i>詳情
+                                    </a>
+                                    
+                                    <form method="POST" action="{{ url_for('favorite.add_favorite') }}" class="m-0">
+                                        <input type="hidden" name="restaurant_name" value="{{ rest.name }}">
+                                        <input type="hidden" name="category" value="{{ rest.category }}">
+                                        <input type="hidden" name="rating" value="{{ rest.rating }}">
+                                        <input type="hidden" name="address" value="{{ rest.address }}">
+                                        <button type="submit" class="btn btn-danger rounded-pill px-3 py-2 fw-medium w-100 shadow-sm">
+                                            <i class="bi bi-heart-fill me-1"></i>收藏
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- Empty State -->
+            <div class="empty-state text-center p-5 rounded-4 bg-white bg-opacity-10 border border-light border-opacity-10 mt-4">
+                <div class="empty-icon-wrapper mx-auto mb-4" style="width: 80px; height: 80px; background: rgba(255, 255, 255, 0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                    <i class="bi bi-radar fs-1 text-danger"></i>
+                </div>
+                <h4 class="fw-bold mb-3">附近沒有符合距離的餐廳唷！</h4>
+                <p class="text-white-50 mb-0">在您所在的 {{ search_distance | int }} 公尺範圍內沒有找到餐廳。請試著在首頁調整擴大距離範圍！</p>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+{% endblock %}

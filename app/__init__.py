@@ -28,17 +28,16 @@ def create_app(test_config=None):
     # Initialize extensions
     db.init_app(app)
 
-    # Register blueprints (Focusing on F-05 favorites and history)
+    # Register blueprints
     from app.routes.favorite_routes import favorite_bp
     from app.routes.history_routes import history_bp
+    from app.routes.main import main_bp
+    from app.routes.restaurant import restaurant_bp
     
     app.register_blueprint(favorite_bp)
     app.register_blueprint(history_bp)
+    app.register_blueprint(main_bp)
+    app.register_blueprint(restaurant_bp)
 
-    # A simple home route to redirect to favorites for easy testing
-    @app.route('/')
-    def index():
-        from flask import redirect, url_for
-        return redirect(url_for('favorite.list_favorites'))
 
     return app
