@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+        
+        <!-- Back Button -->
+        <div class="mb-4">
+            <a href="/" class="btn btn-outline-light rounded-pill px-3 py-2">
+                <i class="bi bi-arrow-left me-1"></i>回首頁抽選
+            </a>
+        </div>
+
+        <!-- Glassmorphism Detail Card -->
+        <div class="card glass-card border-0 shadow-lg rounded-5 overflow-hidden p-4 p-md-5 text-white">
+            <div class="card-body">
+                
+                <div class="row g-4">
+                    <!-- Left: Main Information -->
+                    <div class="col-md-7">
+                        <div class="mb-3 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <!-- Category and Price Badges -->
+                            <div class="d-flex gap-2">
+                                <span class="badge bg-primary rounded-pill px-3 py-2 fs-6">{{ restaurant.category }}</span>
+                                <span class="badge bg-success rounded-pill px-3 py-2 fs-6">{{ restaurant.price_range }}</span>
+                            </div>
+                            
+                            <!-- Favorite Action -->
+                            <div>
+                                {% if is_favorited %}
+                                    <button class="btn btn-danger rounded-pill px-3 py-2 fw-bold disabled shadow-sm">
+                                        <i class="bi bi-heart-fill me-1"></i>已加入收藏
+                                    </button>
+                                {% else %}
+                                    <form method="POST" action="{{ url_for('favorite.add_favorite') }}" class="m-0">
+                                        <input type="hidden" name="restaurant_name" value="{{ restaurant.name }}">
+                                        <input type="hidden" name="category" value="{{ restaurant.category }}">
+                                        <input type="hidden" name="rating" value="{{ restaurant.rating }}">
+                                        <input type="hidden" name="address" value="{{ restaurant.address }}">
+                                        <button type="submit" class="btn btn-outline-danger rounded-pill px-3 py-2 fw-bold shadow-sm transition-all hover-bounce">
+                                            <i class="bi bi-heart me-1"></i>加入收藏
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <h1 class="display-4 fw-extrabold mb-3 text-white">{{ restaurant.name }}</h1>
+
+                        <!-- Rating Stars -->
+                        <div class="mb-4 d-flex align-items-center">
+                            <div class="text-warning fs-3 me-2">
+                                {% set rating_int = restaurant.rating | int %}
+                                {% for i in range(5) %}
+                                    {% if i < rating_int %}
+                                        <i class="bi bi-star-fill"></i>
+                                    {% else %}
+                                        <i class="bi bi-star"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <span class="fs-5 fw-bold text-white opacity-75">({{ restaurant.rating }}分)</span>
+                        </div>
+
+                        <!-- Details List -->
+                        <div class="detail-info-list border-top border-light border-opacity-10 pt-4">
+                            <h4 class="fw-bold mb-3 text-gradient fs-5"><i class="bi bi-info-circle me-2"></i>餐廳詳細資訊</h4>
+                            <ul class="list-unstyled fs-5 lh-lg text-white-50">
+                                <li class="d-flex align-items-start mb-3">
+                                    <i class="bi bi-map me-3 text-info fs-4"></i>
+                                    <div>
+                                        <div class="text-white fw-medium">餐廳地址</div>
+                                        <div class="fs-6">{{ restaurant.address or "暫無提供" }}</div>
+                                    </div>
+                                </li>
+                                <li class="d-flex align-items-start mb-3">
+                                    <i class="bi bi-telephone me-3 text-success fs-4"></i>
+                                    <div>
+                                        <div class="text-white fw-medium">聯絡電話</div>
+                                        <div class="fs-6">{{ restaurant.phone or "暫無提供" }}</div>
+                                    </div>
+                                </li>
+                                <li class="d-flex align-items-start mb-3">
+                                    <i class="bi bi-clock me-3 text-warning fs-4"></i>
+                                    <div>
+                                        <div class="text-white fw-medium">營業時間</div>
+                                        <div class="fs-6">{{ restaurant.operating_hours or "暫無提供" }}</div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Right: Google Map embed -->
+                    <div class="col-md-5">
+                        <div class="map-container rounded-4 overflow-hidden shadow-md h-100 min-h-300">
+                            {% if restaurant.google_maps_url %}
+                                <iframe src="{{ restaurant.google_maps_url }}" width="100%" height="100%" style="border:0; min-height: 300px;" allowfullscreen="" loading="lazy"></iframe>
+                            {% else %}
+                                <div class="bg-dark text-white-50 d-flex flex-column align-items-center justify-content-center h-100 py-5 rounded-4">
+                                    <i class="bi bi-geo-alt fs-1 mb-2"></i>
+                                    <span>無提供地圖嵌入</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

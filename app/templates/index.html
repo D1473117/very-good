@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+        
+        <!-- Header Section -->
+        <div class="text-center mb-5 text-white">
+            <h1 class="display-4 fw-extrabold mb-3 tracking-tight">Today's Lucky Choice?</h1>
+            <p class="lead opacity-75">別再為「今天要吃什麼」煩惱了！設定條件，一鍵幫你抽出附近美味餐廳 🍔</p>
+        </div>
+
+        <!-- Glassmorphism Main Card -->
+        <div class="card glass-card border-0 shadow-lg rounded-5 overflow-hidden mb-4 p-4 p-md-5">
+            <div class="card-body">
+                
+                <!-- Filter Section -->
+                <form id="spinForm" method="POST" action="{{ url_for('main.spin') }}">
+                    <!-- Hidden fields for location -->
+                    <input type="hidden" name="latitude" id="latitude" value="">
+                    <input type="hidden" name="longitude" id="longitude" value="">
+                    
+                    <div class="row g-3 mb-4">
+                        <!-- Category Filter -->
+                        <div class="col-sm-4">
+                            <label for="category" class="form-label text-white fw-bold"><i class="bi bi-tag me-1"></i>料理類型</label>
+                            <select class="form-select rounded-4 py-2 bg-dark-select text-white border-0 shadow-sm" id="category" name="category">
+                                <option value="全部">全部類型</option>
+                                {% for cat in categories %}
+                                <option value="{{ cat }}">{{ cat }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Price Range Filter -->
+                        <div class="col-sm-4">
+                            <label for="price_range" class="form-label text-white fw-bold"><i class="bi bi-coin me-1"></i>預算範圍</label>
+                            <select class="form-select rounded-4 py-2 bg-dark-select text-white border-0 shadow-sm" id="price_range" name="price_range">
+                                <option value="全部">全部預算</option>
+                                {% for pr in price_ranges %}
+                                <option value="{{ pr }}">{{ pr }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <!-- Distance Filter -->
+                        <div class="col-sm-4">
+                            <label for="distance" class="form-label text-white fw-bold"><i class="bi bi-geo-alt me-1"></i>距離範圍</label>
+                            <select class="form-select rounded-4 py-2 bg-dark-select text-white border-0 shadow-sm" id="distance" name="distance">
+                                <option value="500">500 公尺內</option>
+                                <option value="1000">1 公里內</option>
+                                <option value="3000">3 公里內</option>
+                                <option value="不限" selected>不限距離</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Location Status Badge -->
+                <div class="text-center mb-5">
+                    <span id="locationBadge" class="badge rounded-pill bg-light-translucent py-2 px-3 text-white">
+                        <span class="spinner-grow spinner-grow-sm me-2 text-warning" role="status"></span>
+                        <span id="locationText">正在取得您的位置...</span>
+                    </span>
+                </div>
+
+                <!-- Spinning Visual Zone -->
+                <div class="shuffler-container position-relative rounded-4 d-flex align-items-center justify-content-center mb-5 p-4 text-center">
+                    <!-- Shuffling cards (slot machine text effect) -->
+                    <div class="shuffler-box w-100">
+                        <div id="shuffleText" class="display-5 fw-bold text-gradient tracking-wide">今天的幸運餐廳是...？</div>
+                        <div id="shuffleCategory" class="text-white opacity-50 mt-2 fs-5">點擊下方按鈕開始抽選</div>
+                    </div>
+                </div>
+
+                <!-- Action Button -->
+                <div class="text-center">
+                    <button id="spinBtn" type="button" class="btn btn-glowing rounded-pill px-5 py-3 fw-bold text-white fs-4 transition-all">
+                        <i class="bi bi-dice-5-fill me-2 fs-3"></i>骰出幸運餐廳！
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Beautiful Result Modal (Glassmorphism Modal) -->
+<div class="modal fade" id="resultModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content glass-modal border-0 rounded-5 text-white shadow-2xl">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-gradient fs-3"><i class="bi bi-award me-2"></i>今日推薦首選</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body py-4">
+                <div class="row g-4">
+                    <!-- Left: Info -->
+                    <div class="col-md-7 d-flex flex-column justify-content-between">
+                        <div>
+                            <h2 id="resName" class="fw-extrabold text-white mb-2 fs-1">餐廳名稱</h2>
+                            
+                            <!-- Badges -->
+                            <div class="mb-3 d-flex gap-2 flex-wrap">
+                                <span id="resCategory" class="badge bg-primary rounded-pill px-3 py-2 fs-6">類別</span>
+                                <span id="resPrice" class="badge bg-success rounded-pill px-3 py-2 fs-6">價格</span>
+                                <span id="resDistance" class="badge bg-warning text-dark rounded-pill px-3 py-2 fs-6 d-none">距離</span>
+                            </div>
+                            
+                            <!-- Stars -->
+                            <div class="mb-4 d-flex align-items-center">
+                                <div id="resStars" class="text-warning fs-4 me-2"></div>
+                                <span id="resRating" class="fs-5 fw-bold text-white opacity-75">4.5分</span>
+                            </div>
+                            
+                            <!-- Details List -->
+                            <ul class="list-unstyled mb-4 text-white-50 fs-5 lh-lg">
+                                <li class="d-flex align-items-start mb-2">
+                                    <i class="bi bi-map me-3 text-info fs-4"></i>
+                                    <span id="resAddress">台中市西屯區...</span>
+                                </li>
+                                <li class="d-flex align-items-start mb-2">
+                                    <i class="bi bi-telephone me-3 text-success fs-4"></i>
+                                    <span id="resPhone">04-1234567</span>
+                                </li>
+                                <li class="d-flex align-items-start">
+                                    <i class="bi bi-clock me-3 text-warning fs-4"></i>
+                                    <span id="resHours">11:00 - 21:00</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Google Map embed -->
+                    <div class="col-md-5">
+                        <div class="map-container rounded-4 overflow-hidden shadow-md h-100 min-h-250">
+                            <iframe id="resMap" src="" width="100%" height="100%" style="border:0; min-height: 250px;" allowfullscreen="" loading="lazy"></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer border-0 pt-0 d-flex justify-content-between flex-wrap gap-2">
+                <!-- Action Buttons -->
+                <div class="d-flex gap-2">
+                    <a id="resDetailLink" href="#" class="btn btn-outline-light rounded-pill px-4 py-2 fw-bold">
+                        <i class="bi bi-search me-1"></i>查看詳情
+                    </a>
+                    
+                    <!-- Hidden forms for adding favorite -->
+                    <form id="favoriteForm" method="POST" action="{{ url_for('favorite.add_favorite') }}">
+                        <input type="hidden" name="restaurant_name" id="favName">
+                        <input type="hidden" name="category" id="favCategory">
+                        <input type="hidden" name="rating" id="favRating">
+                        <input type="hidden" name="address" id="favAddress">
+                        <button type="submit" class="btn btn-outline-danger rounded-pill px-4 py-2 fw-bold">
+                            <i class="bi bi-heart-fill me-1"></i>加入收藏
+                        </button>
+                    </form>
+                </div>
+                
+                <button type="button" class="btn btn-gradient rounded-pill px-4 py-2 fw-bold" data-bs-dismiss="modal">
+                    <i class="bi bi-arrow-repeat me-1"></i>再抽一次
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Load Custom JS -->
+<script src="{{ url_for('static', filename='js/spin.js') }}"></script>
+{% endblock %}
