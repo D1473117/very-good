@@ -1,228 +1,498 @@
-# API 路由與頁面設計文件 (docs/ROUTES.md)
+# 隨便吃什麼都好 — 路由設計文件 (ROUTES.md)
 
-本文件規劃了「隨便吃什麼都好」系統的 Flask 路由（Routes），包含每個頁面的 URL 路徑、HTTP 方法、輸入/輸出與對應的 Jinja2 模板，並遵守 RESTful 規格設計。
+> 本文件依據 `docs/PRD.md`、`docs/ARCHITECTURE.md` 與 `docs/DB_DESIGN.md`，完整說明系統所有 Flask Blueprint 路由的 URL、HTTP 方法、輸入輸出與對應的 Jinja2 模板。
 
 ---
 
 ## 1. 路由總覽表格
 
-| 功能分類 | 功能名稱 | HTTP 方法 | URL 路徑 | 對應模板/輸出 | 說明 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **主畫面** | 首頁/抽選畫面 | GET | `/` | `index.html` | 顯示首頁，包含條件篩選與「抽！」按鈕 |
-| | 執行隨機抽選 | POST | `/spin` | 重導向 或 JSON | 接收篩選條件，隨機推薦餐廳，登入者自動寫入歷史紀錄 |
-| | 附近餐廳列表 | GET | `/nearby` | `nearby.html` | 顯示附近一定距離內餐廳，依距離排序 |
-| **會員管理** | 註冊頁面 | GET | `/auth/register` | `auth/register.html` | 顯示使用者註冊表單 |
-| | 處理註冊 | POST | `/auth/register` | 重導向 `/auth/login` | 接收註冊表單，驗證後寫入資料庫 |
-| | 登入頁面 | GET | `/auth/login` | `auth/login.html` | 顯示使用者登入表單 |
-| | 處理登入 | POST | `/auth/login` | 重導向 `/` | 驗證使用者帳密，建立 Session |
-| | 處理登出 | POST | `/auth/logout` | 重導向 `/` | 清除 Session 並登出 |
-| **餐廳資訊** | 餐廳詳細資訊 | GET | `/restaurant/<int:id>` | `restaurant_detail.html` | 顯示單筆餐廳之完整資訊 |
-| **個人中心** | 我的收藏列表 | GET | `/profile/favorites` | `profile/favorites.html` | 顯示使用者收藏之餐廳清單（需登入） |
-| (F-05) | 切換收藏狀態 | POST | `/favorite/toggle` | JSON | AJAX 非同步收藏/取消收藏餐廳（需登入） |
-| | 推薦歷史紀錄 | GET | `/profile/history` | `profile/history.html` | 顯示使用者隨機推薦歷史紀錄（需登入，分頁） |
-| | 清空歷史紀錄 | POST | `/profile/history/clear` | 重導向 `/profile/history`| 清空該使用者所有推薦歷史紀錄（需登入） |
-| **多人投票** | 建立投票房間頁 | GET | `/vote/create` | `vote/create.html` | 顯示多人投票房間建立表單（Nice to Have） |
-| (未來擴充) | 建立投票房間 | POST | `/vote/create` | 重導向房間頁面 | 建立投票房間並產生房號，重導向至房間 |
-| | 進入投票房間 | GET | `/vote/room/<room_code>`| `vote/room.html` | 顯示多人投票房間，進行即時投票 |
-| | 提交房間投票 | POST | `/vote/room/<room_code>/vote`| JSON | 提交投票（AJAX，回傳 JSON） |
-| | 輪詢房間狀態 | GET | `/vote/room/<room_code>/status`| JSON | 取得房間目前投票狀態與結果（AJAX，回傳 JSON） |
+| 功能 | HTTP 方法 | URL 路徑 | Blueprint | 對應模板 | 登入要求 |
+|---|---|---|---|---|---|
+| **首頁（轉盤抽選）** | GET | `/` | `main` | `index.html` | 否 |
+| **隨機抽選 API** | POST | `/spin` | `main` | — (JSON) | 否（登入才記錄歷史） |
+| **附近餐廳探索** | GET | `/nearby` | `main` | `main/nearby.html` | 否 |
+| **餐廳詳情頁** | GET | `/restaurant/<int:id>` | `restaurant` | `restaurant/detail.html` | 否 |
+| **提交評論** | POST | `/restaurant/<int:id>/review` | `restaurant` | — (重導向) | **是** |
+| **會員註冊頁面** | GET | `/auth/register` | `auth` | `auth/register.html` | 否 |
+| **會員註冊（送出）** | POST | `/auth/register` | `auth` | — (重導向) | 否 |
+| **會員登入頁面** | GET | `/auth/login` | `auth` | `auth/login.html` | 否 |
+| **會員登入（送出）** | POST | `/auth/login` | `auth` | — (重導向) | 否 |
+| **會員登出** | POST | `/auth/logout` | `auth` | — (重導向) | **是** |
+| **我的收藏** | GET | `/profile/favorites` | `profile` | `profile/favorites.html` | **是** |
+| **歷史紀錄** | GET | `/profile/history` | `profile` | `profile/history.html` | **是** |
+| **收藏切換（AJAX）** | POST | `/favorite/toggle` | `profile` | — (JSON) | **是** |
+| **投票大廳** | GET | `/vote` | `vote` | `vote/lobby.html` | 否 |
+| **建立投票房間** | POST | `/vote/create` | `vote` | — (重導向) | 否 |
+| **投票房間** | GET | `/vote/<room_id>` | `vote` | `vote/room.html` | 否 |
+| **送出投票** | POST | `/vote/<room_id>/cast` | `vote` | — (重導向) | 否（Cookie 防灌票） |
+| **即時票數查詢（AJAX）** | GET | `/vote/<room_id>/data` | `vote` | — (JSON) | 否 |
 
 ---
 
 ## 2. 每個路由的詳細說明
 
-### 2.1 主畫面模組 (`main`)
-
-#### `GET /`
-*   **說明**：顯示系統主頁（抽選主畫面）。
-*   **輸入**：無。
-*   **處理邏輯**：載入首頁，初始化預設篩選參數。
-*   **輸出**：渲染 `index.html`。
-*   **錯誤處理**：無。
-
-#### `POST /spin`
-*   **說明**：接收篩選條件，執行隨機推薦演算法。
-*   **輸入**：
-    *   表單或 JSON：`category`（類別，字串）、`price_range`（價格區間，字串）、`distance`（最大距離，整數）、`latitude`（經度，浮點數）、`longitude`（緯度，浮點數）。
-*   **處理邏輯**：
-    1.  根據類別、價格、距離篩選 `Restaurant` 資料。
-    2.  利用隨機演算法（如 `random.choice()`）選出一間餐廳。
-    3.  **若使用者已登入**：呼叫 `RecommendationHistory.create(user_id, restaurant_id)` 寫入歷史紀錄。
-*   **輸出**：
-    *   同步請求：重導向至 `/restaurant/<id>`。
-    *   AJAX 請求：回傳 JSON `{ "status": "success", "restaurant_id": id }`。
-*   **錯誤處理**：
-    *   若無符合篩選條件的餐廳，重導向回首頁並以 Flash 訊息提示，或 AJAX 回傳 `{ "status": "error", "message": "找不到符合條件的餐廳" }`（HTTP 404）。
-
-#### `GET /nearby`
-*   **說明**：根據使用者 GPS 定位，顯示周邊餐廳列表。
-*   **輸入**：
-    *   URL 查詢參數：`lat`（緯度，必填）、`lng`（經度，必填）、`distance`（搜尋半徑公尺，預設 500）。
-*   **處理邏輯**：
-    1.  讀取所有餐廳，以 Haversine 公式計算各餐廳與該座標之距離。
-    2.  過濾距離小於 `distance` 的餐廳。
-    3.  將結果依距離由近到遠排序。
-*   **輸出**：渲染 `nearby.html`。
-*   **錯誤處理**：
-    *   若參數不全或格式錯誤，顯示錯誤提示。
+### Blueprint: `main` — 核心頁面（`app/routes/main.py`）
 
 ---
 
-### 2.2 會員管理模組 (`auth`)
+#### `GET /` — 首頁
 
-#### `GET /auth/register`
-*   **說明**：顯示註冊頁面。
-*   **輸入**：無。
-*   **輸出**：渲染 `auth/register.html`。
-
-#### `POST /auth/register`
-*   **說明**：處理使用者註冊請求。
-*   **輸入**：
-    *   表單欄位：`username`（字串，必填）、`password`（字串，必填）、`confirm_password`（字串，必填）。
-*   **處理邏輯**：
-    1.  驗證欄位是否填妥、密碼與確認密碼是否一致。
-    2.  檢查使用者名稱 `username` 是否已被註冊。
-    3.  使用 bcrypt 進行密碼雜湊，寫入 `User` 資料庫。
-*   **輸出**：重導向至 `/auth/login` 並 Flash 提示註冊成功。
-*   **錯誤處理**：
-    *   驗證失敗或名稱重複時，重新渲染 `auth/register.html`，並顯示對應錯誤訊息。
-
-#### `GET /auth/login`
-*   **說明**：顯示登入頁面。
-*   **輸入**：無。
-*   **輸出**：渲染 `auth/login.html`。
-
-#### `POST /auth/login`
-*   **說明**：驗證登入並建立 Session。
-*   **輸入**：
-    *   表單欄位：`username`（字串）、`password`（字串）。
-*   **處理邏輯**：
-    1.  根據 `username` 查詢使用者。
-    2.  使用 bcrypt 比對密碼。
-    3.  若正確，呼叫 Flask-Login 的 `login_user()` 建立登入狀態。
-*   **輸出**：重導向至首頁 `/`。
-*   **錯誤處理**：
-    *   驗證失敗重新渲染 `auth/login.html`，並顯示「帳號或密碼錯誤」提示。
-
-#### `POST /auth/logout`
-*   **說明**：登出目前使用者並清除 Session。
-*   **輸入**：無。
-*   **處理邏輯**：呼叫 Flask-Login 的 `logout_user()`。
-*   **輸出**：重導向至首頁 `/`。
+- **函式名稱**：`index()`
+- **輸入**：無
+- **處理邏輯**：
+  1. 查詢 `restaurants` 資料表中所有不重複的 `category` 欄位值
+  2. 將類別清單傳入模板，供使用者勾選篩選條件
+- **輸出**：渲染 `templates/index.html`，傳入變數 `categories: list[str]`
+- **錯誤處理**：無（資料表為空時 categories 為空清單，正常渲染）
 
 ---
 
-### 2.3 餐廳資訊模組 (`restaurant`)
+#### `POST /spin` — 隨機抽選 API（AJAX）
 
-#### `GET /restaurant/<int:id>`
-*   **說明**：顯示特定餐廳的詳細介紹頁面。
-*   **輸入**：URL 參數 `id`（餐廳唯一識別碼）。
-*   **處理邏輯**：
-    1.  從資料庫查詢對應 `id` 的 `Restaurant` 資料。
-    2.  若使用者已登入，呼叫 `Favorite.is_favorited(current_user.id, id)` 檢查是否已被收藏。
-*   **輸出**：渲染 `restaurant_detail.html`，並傳入 `is_favorited` 變數。
-*   **錯誤處理**：
-    *   若餐廳不存在，回傳 HTTP 404 錯誤頁面。
-
----
-
-### 2.4 個人中心與 F-05 模組 (`profile`)
-
-#### `GET /profile/favorites`
-*   **說明**：顯示目前登入用戶的收藏餐廳清單。
-*   **安全防護**：加上 `@login_required`。
-*   **輸入**：無。
-*   **處理邏輯**：呼叫 `Favorite.get_by_user(current_user.id)` 獲取收藏記錄，透過 SQLAlchemy 關聯載入餐廳資訊。
-*   **輸出**：渲染 `profile/favorites.html`。
-
-#### `POST /favorite/toggle`
-*   **說明**：非同步（AJAX）切換收藏狀態。
-*   **安全防護**：加上 `@login_required`，且前端需傳遞 CSRF Token。
-*   **輸入**：
-    *   JSON 或表單：`restaurant_id`（餐廳 ID，整數，必填）。
-*   **處理邏輯**：
-    1.  驗證 `restaurant_id` 是否存在。
-    2.  查詢 `Favorite` 表是否已有 `(current_user.id, restaurant_id)` 的記錄。
-    3.  若**已存在**：呼叫 `Favorite.delete(current_user.id, restaurant_id)` 刪除紀錄。
-    4.  若**不存在**：呼叫 `Favorite.create(current_user.id, restaurant_id)` 新增紀錄。
-*   **輸出**：回傳 JSON `{ "status": "success", "favorited": true }`（新增）或 `{ "status": "success", "favorited": false }`（刪除）。
-*   **錯誤處理**：
-    *   未登入：回傳 JSON `{ "error": "unauthorized" }`（HTTP 401）。
-    *   無效餐廳 ID：回傳 JSON `{ "error": "invalid_restaurant" }`（HTTP 400）。
-
-#### `GET /profile/history`
-*   **說明**：顯示目前登入用戶的推薦歷史紀錄。
-*   **安全防護**：加上 `@login_required`。
-*   **輸入**：
-    *   URL 查詢參數：`page`（目前頁碼，預設 1）、`limit`（每頁幾筆，預設 10）。
-*   **處理邏輯**：
-    1.  呼叫 `RecommendationHistory.get_by_user(current_user.id, limit=limit, offset=(page-1)*limit)` 取得歷史紀錄。
-    2.  計算總記錄數以供分頁元件（Pagination）渲染。
-*   **輸出**：渲染 `profile/history.html`。
-
-#### `POST /profile/history/clear`
-*   **說明**：清空目前登入用戶的所有推薦歷史。
-*   **安全防護**：加上 `@login_required`。
-*   **輸入**：無。
-*   **處理邏輯**：呼叫 `RecommendationHistory.clear_user_history(current_user.id)`。
-*   **輸出**：重導向至 `/profile/history`，並 Flash 提示歷史紀錄已清空。
+- **函式名稱**：`spin()`
+- **輸入（JSON Body）**：
+  | 欄位 | 型別 | 說明 | 預設值 |
+  |---|---|---|---|
+  | `distance` | int | 最大距離（公尺） | 3000 |
+  | `price_level` | list[int] | 可接受的價格等級（1~4） | [1,2,3,4] |
+  | `cuisines` | list[str] | 要篩選的料理類型 | []（不限） |
+- **處理邏輯**：
+  1. 以條件過濾 `Restaurant` 資料表（距離、價格等級、料理類型）
+  2. 若無符合結果，回傳 404
+  3. `random.choice()` 隨機選取一筆餐廳
+  4. 若使用者已登入：查詢是否已收藏（`favorited`），並新增 `SpinHistory` 紀錄
+  5. 回傳餐廳資料 JSON（含 `favorited` 欄位）
+- **輸出（JSON）**：
+  ```json
+  {
+    "id": 2, "name": "屋馬燒肉", "category": "日式",
+    "rating": 4.8, "price_level": 3, "distance": 1500,
+    "address": "台中市...", "lat": null, "lng": null,
+    "favorited": false
+  }
+  ```
+- **錯誤處理**：
+  - 找不到符合條件的餐廳 → `404 {"error": "找不到符合條件的餐廳..."}`
 
 ---
 
-### 2.5 多人投票模組 (`vote` - Future Extension)
+#### `GET /nearby` — 附近餐廳探索
 
-#### `GET /vote/create`
-*   **說明**：顯示建立多人投票房間表單。
-*   **輸出**：渲染 `vote/create.html`。
+- **函式名稱**：`nearby()`
+- **輸入（URL Query 參數）**：
+  | 參數 | 型別 | 說明 |
+  |---|---|---|
+  | `search` | str | 搜尋關鍵字（餐廳名稱或地址模糊比對） |
+  | `distance` | int | 最大距離過濾 |
+  | `category` | str | 料理類型過濾 |
+  | `rating` | float | 最低評分過濾 |
+- **處理邏輯**：
+  1. 依有傳入的參數動態組合 SQLAlchemy 查詢條件
+  2. 若使用者已登入，取得其所有收藏的 `restaurant_id` 集合（`fav_ids`），供模板顯示愛心狀態
+- **輸出**：渲染 `templates/main/nearby.html`，傳入 `restaurants`、`categories`、`fav_ids` 等變數
+- **錯誤處理**：無符合結果時，模板顯示「找不到餐廳」提示
 
-#### `POST /vote/create`
-*   **說明**：建立投票房間，產生隨機房號。
-*   **輸入**：表單欄位（地區、餐點類別、價格區間）。
-*   **處理邏輯**：建立房間記錄，隨機抽取 3–5 間候選餐廳，產生 6 碼英數代碼，將發起人設為房主。
-*   **輸出**：重導向至 `/vote/room/<room_code>`。
+---
 
-#### `GET /vote/room/<room_code>`
-*   **說明**：進入投票房間，可進行投票或觀看結果。
-*   **輸入**：URL 參數 `room_code`（6 碼房間代碼）。
-*   **輸出**：渲染 `vote/room.html`。
+### Blueprint: `restaurant` — 餐廳詳情（`app/routes/restaurant.py`）
 
-#### `POST /vote/room/<room_code>/vote`
-*   **說明**：提交使用者對某餐廳的投票。
-*   **輸入**：表單或 JSON：`restaurant_id`。
-*   **輸出**：回傳 JSON `{ "status": "success", "message": "投票成功" }`。
+---
 
-#### `GET /vote/room/<room_code>/status`
-*   **說明**：輪詢（Polling）取得目前投票狀態與結果。
-*   **輸出**：回傳 JSON `{ "votes": { restaurant_id: count }, "closed": true/false, "winner": restaurant_id }`。
+#### `GET /restaurant/<int:restaurant_id>` — 餐廳詳情頁
+
+- **函式名稱**：`detail(restaurant_id)`
+- **輸入**：URL 路徑參數 `restaurant_id`（整數）
+- **處理邏輯**：
+  1. 以 `Restaurant.query.get_or_404()` 取得餐廳，不存在則自動回傳 404
+  2. 取得該餐廳的所有評論（依 `created_at` 降冪排序）
+  3. 若使用者已登入，查詢是否已收藏
+- **輸出**：渲染 `templates/restaurant/detail.html`，傳入 `restaurant`、`reviews`、`favorited`
+- **錯誤處理**：餐廳不存在 → Flask 自動 abort(404)
+
+---
+
+#### `POST /restaurant/<int:restaurant_id>/review` — 提交評論
+
+- **函式名稱**：`submit_review(restaurant_id)`
+- **輸入（Form Data）**：
+  | 欄位 | 說明 |
+  |---|---|
+  | `rating` | 評分（1.0 ~ 5.0） |
+  | `comment` | 評論內文（必填） |
+- **處理邏輯**：
+  1. 登入驗證（`@login_required`）
+  2. 防止同一使用者對同一餐廳重複評論
+  3. 驗證評分範圍是否在 1.0 ~ 5.0 之間
+  4. 新增 `Review` 資料後，重新計算該餐廳所有評論的平均評分，並更新 `restaurants.rating`
+- **輸出**：Flash 成功訊息 + 重導向回 `GET /restaurant/<id>`
+- **錯誤處理**：未登入 → 導向登入頁；重複評論 / 格式錯誤 → Flash 警告並重導向回詳情頁
+
+---
+
+### Blueprint: `auth` — 會員驗證（`app/routes/auth.py`）
+
+---
+
+#### `GET /auth/register` — 顯示註冊表單
+#### `POST /auth/register` — 送出註冊
+
+- **函式名稱**：`register()`
+- **POST 輸入（Form Data）**：`username`、`password`、`confirm_password`
+- **處理邏輯**：
+  1. GET：若已登入則重導向首頁
+  2. POST：驗證欄位不為空、密碼長度 ≥ 6、兩次密碼相符
+  3. 確認 username 未被使用
+  4. 建立 `User`，以 `set_password()` 進行 Bcrypt Hash
+  5. 使用 `login_user()` 自動登入
+- **輸出**：POST 成功 → Flash 歡迎訊息 + 重導向首頁；驗證失敗 → Flash 錯誤 + 重新渲染表單
+
+---
+
+#### `GET /auth/login` — 顯示登入表單
+#### `POST /auth/login` — 送出登入
+
+- **函式名稱**：`login()`
+- **POST 輸入（Form Data）**：`username`、`password`、`remember`（checkbox）
+- **處理邏輯**：
+  1. 查詢 User，以 `check_password()` 驗證 Bcrypt Hash
+  2. 驗證成功 → `login_user(user, remember=remember)` 建立 Session
+- **輸出**：POST 成功 → Flash 歡迎訊息 + 重導向首頁；驗證失敗 → Flash 錯誤 + 重新渲染
+
+---
+
+#### `POST /auth/logout` — 登出
+
+- **函式名稱**：`logout()`
+- **處理邏輯**：呼叫 `logout_user()` 清除 Session
+- **輸出**：Flash 訊息 + 重導向首頁
+
+---
+
+### Blueprint: `profile` — 會員中心（`app/routes/profile.py`）
+
+---
+
+#### `GET /profile/favorites` — 我的收藏
+
+- **函式名稱**：`favorites()`
+- **輸入**：無（從 `current_user` 取得 user_id）
+- **處理邏輯**：查詢 `Favorite` 並透過 relationship 取出對應的 `Restaurant` 物件清單
+- **輸出**：渲染 `templates/profile/favorites.html`，傳入 `restaurants: list[Restaurant]`
+
+---
+
+#### `GET /profile/history` — 歷史紀錄
+
+- **函式名稱**：`history()`
+- **輸入**：無
+- **處理邏輯**：分別查詢 `SpinHistory`（抽選紀錄）與 `Review`（評論紀錄），依時間降冪排列
+- **輸出**：渲染 `templates/profile/history.html`，傳入 `spins`、`reviews`
+
+---
+
+#### `POST /favorite/toggle` — 收藏切換（AJAX）
+
+- **函式名稱**：`toggle_favorite()`
+- **輸入（JSON Body）**：`restaurant_id: int`
+- **處理邏輯**：
+  1. 手動驗證登入（不用 `@login_required`，以便 AJAX 取得 401 JSON 而非 HTML 重導向）
+  2. 查詢 Favorite 是否存在 → 存在則刪除，不存在則新增
+- **輸出（JSON）**：
+  ```json
+  { "status": "success", "favorited": true }
+  ```
+- **錯誤處理**：
+  - 未登入 → `401 {"error": "請先登入後再進行此操作！"}`
+  - 未傳入 / 無效的 restaurant_id → `400 {"error": "..."}`
+  - 找不到餐廳 → `404 {"error": "找不到指定的餐廳"}`
+
+---
+
+### Blueprint: `vote` — 多人投票（`app/routes/vote.py`）
+
+---
+
+#### `GET /vote` — 投票大廳
+
+- **函式名稱**：`lobby()`
+- **處理邏輯**：查詢最近 10 個投票房間
+- **輸出**：渲染 `templates/vote/lobby.html`，傳入 `rooms`
+
+---
+
+#### `POST /vote/create` — 建立投票房間
+
+- **函式名稱**：`create_room()`
+- **輸入（Form Data）**：`title`（投票主題，選填）
+- **處理邏輯**：
+  1. 若未填 title，使用預設標題
+  2. 從 `restaurants` 隨機抽選最多 4 間作為候選
+  3. 建立 `VoteRoom`（UUID 短碼 PK）與對應的 `VoteOption`
+- **輸出**：Flash 成功訊息 + 重導向至 `GET /vote/<room_id>`
+
+---
+
+#### `GET /vote/<room_id>` — 投票房間頁
+
+- **函式名稱**：`room(room_id)`
+- **輸入**：URL 路徑參數 `room_id`（8 碼 UUID 字串）
+- **處理邏輯**：
+  1. 取得房間與所有選項，計算總票數
+  2. 透過 Cookie（`voted_<room_id>`）或 Session 判斷當前瀏覽器是否已投票
+- **輸出**：渲染 `templates/vote/room.html`，傳入 `room`、`options`、`total_votes`、`has_voted`
+
+---
+
+#### `POST /vote/<room_id>/cast` — 送出投票
+
+- **函式名稱**：`cast_vote(room_id)`
+- **輸入（Form Data）**：`option_id: int`
+- **處理邏輯**：
+  1. 檢查 Cookie / Session，若已投票則 Flash 警告並重導向
+  2. 驗證 option_id 有效且屬於此房間
+  3. `option.votes += 1` 並 commit
+  4. 設定 Cookie（`max_age=7天`）與 Session 標記
+- **輸出**：Flash 成功訊息 + 重導向回投票房間頁
+
+---
+
+#### `GET /vote/<room_id>/data` — 即時票數 AJAX API
+
+- **函式名稱**：`room_data(room_id)`
+- **輸入**：URL 路徑參數 `room_id`
+- **輸出（JSON）**：
+  ```json
+  {
+    "room_title": "今天吃什麼？美味對決！",
+    "total_votes": 12,
+    "options": [
+      { "option_id": 1, "restaurant_name": "屋馬燒肉", "votes": 7, "percentage": 58.3 },
+      { "option_id": 2, "restaurant_name": "輕井澤鍋物", "votes": 5, "percentage": 41.7 }
+    ]
+  }
+  ```
+- **錯誤處理**：找不到房間 → `404 {"error": "Room not found"}`
 
 ---
 
 ## 3. Jinja2 模板清單
 
-全站模板均繼承共用模板 `base.html`，以保持外觀一致與易維護性。
+所有模板均繼承自 `app/templates/base.html`。
 
-| 模板檔案路徑 | 繼承之父模板 | 說明 |
-| :--- | :--- | :--- |
-| `templates/base.html` | — (根模板) | 定義全站共用的 Layout（包含 Navbar、Footer、Bootstrap 與共用 JS 載入點） |
-| `templates/index.html` | `base.html` | 首頁抽選主畫面（包含篩選條件表單與轉盤抽選動畫） |
-| `templates/nearby.html` | `base.html` | 附近餐廳搜尋與列表展示頁面 |
-| `templates/restaurant_detail.html` | `base.html` | 餐廳詳細資訊展示頁（包含 Google Maps 內嵌、詳細資訊與 AJAX 收藏按鈕） |
-| `templates/auth/login.html` | `base.html` | 使用者登入畫面 |
-| `templates/auth/register.html` | `base.html` | 使用者註冊畫面 |
-| `templates/profile/favorites.html` | `base.html` | 個人中心：我的收藏餐廳卡片清單 |
-| `templates/profile/history.html` | `base.html` | 個人中心：抽選歷史紀錄分頁表格（可快速收藏/取消收藏或清空歷史） |
-| `templates/vote/create.html` | `base.html` | 建立多人投票房間頁面 |
-| `templates/vote/room.html` | `base.html` | 多人投票房間主畫面，顯示倒數計時與即時得票結果 |
+| 模板路徑 | 對應路由 | 功能說明 |
+|---|---|---|
+| `templates/base.html` | — | 基底模板（導覽列、Flash 訊息、頁尾、Toast 容器） |
+| `templates/index.html` | `GET /` | 首頁：條件篩選面板 + 輪盤轉動動畫 + 結果卡片 |
+| `templates/main/nearby.html` | `GET /nearby` | 附近探索：左側篩選面板 + 右側餐廳卡片網格 |
+| `templates/restaurant/detail.html` | `GET /restaurant/<id>` | 餐廳詳情：資訊卡片、評分星等、評論列表、留評表單 |
+| `templates/auth/register.html` | `GET /auth/register` | 會員註冊表單（Glassmorphism 卡片樣式） |
+| `templates/auth/login.html` | `GET /auth/login` | 會員登入表單（含「記住我」checkbox） |
+| `templates/profile/favorites.html` | `GET /profile/favorites` | 收藏清單：卡片網格，AJAX 點擊移除 |
+| `templates/profile/history.html` | `GET /profile/history` | 歷史紀錄：「抽選紀錄」與「我的評論」雙分頁表格 |
+| `templates/vote/lobby.html` | `GET /vote` | 投票大廳：發起投票表單 + 最近房間清單 |
+| `templates/vote/room.html` | `GET /vote/<room_id>` | 投票房間：候選餐廳卡片 + Progress Bar 計票 |
 
 ---
 
-## 4. 路由骨架程式碼 (Skeleton)
+## 4. 路由骨架程式碼（帶 Docstring）
 
-已於 `app/routes/` 下建立以下模組的路由骨架檔案：
-*   `app/routes/auth.py`
-*   `app/routes/main.py`
-*   `app/routes/restaurant.py`
-*   `app/routes/profile.py`
-*   `app/routes/vote.py`
+> 以下骨架為說明用，**實際實作已完整存在於 `app/routes/` 各檔案中**。
 
-*詳細路由函式簽名與註解請參閱 `app/routes/` 內的 Python 原始碼。*
+### `app/routes/main.py`
+
+```python
+from flask import Blueprint
+main_bp = Blueprint('main', __name__)
+
+@main_bp.route('/')
+def index():
+    """
+    首頁路由。
+    從資料庫動態讀取所有不重複的餐廳類別（category），
+    傳入 index.html 供使用者勾選條件。
+    回傳：render_template('index.html', categories=categories)
+    """
+    pass
+
+@main_bp.route('/spin', methods=['POST'])
+def spin():
+    """
+    AJAX 隨機抽選 API（JSON 輸入/輸出）。
+    接收 distance、price_level、cuisines 條件，
+    過濾並隨機選取一筆符合的餐廳。
+    登入使用者額外記錄 SpinHistory 並回傳 favorited 狀態。
+    回傳：jsonify(restaurant_dict + favorited)
+    錯誤：404 若找不到符合條件的餐廳
+    """
+    pass
+
+@main_bp.route('/nearby')
+def nearby():
+    """
+    附近餐廳探索頁（GET 參數過濾）。
+    接收 search、distance、category、rating 等 Query 參數，
+    動態組合 SQLAlchemy 查詢，並傳入已登入使用者的收藏 ID 集合。
+    回傳：render_template('main/nearby.html', ...)
+    """
+    pass
+```
+
+### `app/routes/auth.py`
+
+```python
+from flask import Blueprint
+auth_bp = Blueprint('auth', __name__)
+
+@auth_bp.route('/auth/register', methods=['GET', 'POST'])
+def register():
+    """
+    GET：顯示會員註冊表單（已登入者重導向首頁）。
+    POST：驗證欄位 → 確認 username 唯一 → 以 Bcrypt Hash 密碼建立 User
+          → login_user() 自動登入 → 重導向首頁。
+    錯誤：Flash 提示（欄位空白、密碼不符、帳號已存在）
+    """
+    pass
+
+@auth_bp.route('/auth/login', methods=['GET', 'POST'])
+def login():
+    """
+    GET：顯示會員登入表單（已登入者重導向首頁）。
+    POST：查詢 User → check_password() 驗證 Bcrypt Hash
+          → login_user(remember=...) → 重導向首頁。
+    錯誤：Flash「使用者名稱或密碼錯誤」
+    """
+    pass
+
+@auth_bp.route('/auth/logout', methods=['POST'])
+def logout():
+    """
+    登出目前使用者，清除 Flask-Login Session。
+    回傳：Flash 訊息 + 重導向首頁
+    """
+    pass
+```
+
+### `app/routes/restaurant.py`
+
+```python
+from flask import Blueprint
+restaurant_bp = Blueprint('restaurant', __name__)
+
+@restaurant_bp.route('/restaurant/<int:restaurant_id>')
+def detail(restaurant_id):
+    """
+    餐廳詳情頁。
+    取得餐廳資料與所有評論（降冪排序），
+    若已登入則附帶 favorited 狀態。
+    回傳：render_template('restaurant/detail.html', ...)
+    錯誤：404 若 restaurant_id 不存在
+    """
+    pass
+
+@restaurant_bp.route('/restaurant/<int:restaurant_id>/review', methods=['POST'])
+def submit_review(restaurant_id):
+    """
+    提交餐廳評論（需登入）。
+    驗證 rating(1~5) 與 comment 非空，
+    防止同一使用者重複評論，
+    新增評論後重新計算並更新餐廳平均評分。
+    回傳：重導向回詳情頁（Flash 成功/錯誤訊息）
+    """
+    pass
+```
+
+### `app/routes/profile.py`
+
+```python
+from flask import Blueprint
+profile_bp = Blueprint('profile', __name__)
+
+@profile_bp.route('/profile/favorites')
+def favorites():
+    """
+    我的收藏頁（需登入）。
+    查詢當前使用者的所有 Favorite 紀錄，
+    透過 relationship 取出對應的 Restaurant 物件。
+    回傳：render_template('profile/favorites.html', restaurants=...)
+    """
+    pass
+
+@profile_bp.route('/profile/history')
+def history():
+    """
+    歷史紀錄頁（需登入）。
+    查詢當前使用者的 SpinHistory（抽選紀錄）與 Review（評論紀錄），
+    分別降冪排序後傳入模板。
+    回傳：render_template('profile/history.html', spins=..., reviews=...)
+    """
+    pass
+
+@profile_bp.route('/favorite/toggle', methods=['POST'])
+def toggle_favorite():
+    """
+    收藏切換 AJAX API（需登入）。
+    接收 JSON body: {restaurant_id}，
+    查詢 Favorite 是否存在 → 存在則刪除，不存在則新增。
+    以手動方式驗證登入（回傳 401 JSON，而非 HTML 重導向）。
+    回傳：jsonify({status, favorited})
+    錯誤：401（未登入）/ 400（無效 ID）/ 404（餐廳不存在）
+    """
+    pass
+```
+
+### `app/routes/vote.py`
+
+```python
+from flask import Blueprint
+vote_bp = Blueprint('vote', __name__)
+
+@vote_bp.route('/vote')
+def lobby():
+    """
+    投票大廳頁。
+    顯示最近 10 個投票房間與「發起投票」表單。
+    回傳：render_template('vote/lobby.html', rooms=...)
+    """
+    pass
+
+@vote_bp.route('/vote/create', methods=['POST'])
+def create_room():
+    """
+    建立投票房間。
+    從所有餐廳中隨機抽選最多 4 間為候選，
+    建立 VoteRoom（UUID 短碼）與對應的 VoteOption。
+    回傳：重導向至 GET /vote/<room_id>
+    """
+    pass
+
+@vote_bp.route('/vote/<room_id>')
+def room(room_id):
+    """
+    投票房間頁。
+    展示候選餐廳選項與目前票數，
+    透過 Cookie/Session 判斷當前瀏覽器是否已投票。
+    回傳：render_template('vote/room.html', ...)
+    錯誤：404 若 room_id 不存在
+    """
+    pass
+
+@vote_bp.route('/vote/<room_id>/cast', methods=['POST'])
+def cast_vote(room_id):
+    """
+    送出投票。
+    防灌票（Cookie + Session 雙重驗證）→ 驗證 option_id 有效
+    → votes += 1 → 設定 Cookie（7天）與 Session 標記。
+    回傳：Flash 訊息 + 重導向回投票房間頁
+    """
+    pass
+
+@vote_bp.route('/vote/<room_id>/data')
+def room_data(room_id):
+    """
+    即時票數查詢 AJAX API（每 3 秒輪詢）。
+    回傳各選項票數與百分比 JSON，供前端更新 Progress Bar。
+    回傳：jsonify({room_title, total_votes, options: [...]})
+    錯誤：404 若房間不存在
+    """
+    pass
+```

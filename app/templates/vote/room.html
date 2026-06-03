@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ room.title }} - 投票房{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Styling for Vote Options & Progress Bars */
+    .vote-option-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        transition: var(--transition-smooth);
+        margin-bottom: 1.2rem;
+        position: relative;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+    .vote-option-card:hover {
+        background: var(--glass-bg-hover);
+        border-color: rgba(255,255,255,0.2);
+    }
+    .vote-option-card.selected {
+        border-color: #FF416C;
+        background: rgba(255, 65, 108, 0.05);
+    }
+    .progress-track {
+        background: rgba(255,255,255,0.05);
+        height: 10px;
+        border-radius: 5px;
+        width: 100%;
+        margin-top: 0.8rem;
+        overflow: hidden;
+        position: relative;
+    }
+    .progress-bar-fill {
+        background: var(--primary-gradient);
+        height: 100%;
+        border-radius: 5px;
+        width: 0%;
+        transition: width 1s cubic-bezier(0.19, 1, 0.22, 1);
+        box-shadow: 0 0 10px rgba(255, 65, 108, 0.4);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="glass-card accent-header">
+    <div style="text-align: center; margin-bottom: 2.5rem;">
+        <h1 style="font-size: 2.2rem; margin-bottom: 0.5rem;"><i class="bi bi-box2-heart-fill" style="color: #FF416C; margin-right: 0.5rem;"></i>{{ room.title }}</h1>
+        <p style="color: var(--text-secondary); margin-bottom: 1rem;">邀請朋友們一起來投票，選出這餐的終極勝出者！</p>
+        
+        <!-- Share Link Area -->
+        <div style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); padding: 0.5rem 1.2rem; border-radius: 30px; margin-top: 0.5rem;">
+            <i class="bi bi-link-45deg" style="color: #FF416C; font-size: 1.2rem;"></i>
+            <span id="room-url" style="font-size: 0.85rem; color: var(--text-secondary); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ request.url }}</span>
+            <button type="button" class="nav-btn-secondary" onclick="copyRoomUrl()" style="padding: 0.2rem 0.8rem; font-size: 0.8rem; border-radius: 20px;">
+                複製連結
+            </button>
+        </div>
+    </div>
+
+    <div class="restaurant-detail-grid" style="gap: 3rem;">
+        <!-- Left: Vote Form or Results -->
+        <div>
+            {% if not has_voted %}
+                <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem;"><i class="bi bi-patch-check-fill" style="color: #FF416C; margin-right: 0.5rem;"></i>請投下您神聖的一票</h3>
+                
+                <form action="{{ url_for('vote.cast_vote', room_id=room.id) }}" method="POST" id="vote-form">
+                    {% for opt in options %}
+                        <div class="vote-option-card" onclick="selectVoteOption('{{ opt.id }}')" id="opt-card-{{ opt.id }}">
+                            <input type="radio" id="radio-{{ opt.id }}" name="option_id" value="{{ opt.id }}" required style="accent-color: #FF416C; width: 20px; height: 20px; cursor: pointer;">
+                            <div>
+                                <h4 style="color: #fff; font-size: 1.15rem; font-weight: 700;">{{ opt.restaurant.name }}</h4>
+                                <span style="font-size: 0.85rem; color: var(--text-muted);">類型：{{ opt.restaurant.category }} | 星等：{{ opt.restaurant.rating }} ★</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                    
+                    <button type="submit" class="spin-btn" style="width: 100%; padding: 0.8rem; font-size: 1.1rem; border-radius: 12px; justify-content: center; margin-top: 1.5rem;">
+                        確認送出投票
+                    </button>
+                </form>
+            {% else %}
+                <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem;"><i class="bi bi-bar-chart-fill" style="color: #FF416C; margin-right: 0.5rem;"></i>即時投票對決結果</h3>
+                
+                <div id="results-container">
+                    {% for opt in options %}
+                        {% set pct = (opt.votes / total_votes * 100) if total_votes > 0 else 0 %}
+                        <div class="glass-card" style="padding: 1.2rem 1.5rem; border-radius: 16px; background: rgba(255,255,255,0.01); margin-bottom: 1.2rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+                                <strong style="color: #fff; font-size: 1.1rem;">{{ opt.restaurant.name }}</strong>
+                                <span style="font-weight: 700; color: #FF416C; font-size: 1.05rem;" id="pct-text-{{ opt.id }}">{{ opt.votes }} 票 ({{ pct | round(1) }}%)</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-bar-fill" id="bar-{{ opt.id }}" style="width: {{ pct }}%;"></div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <p style="text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 1.5rem;" id="poll-info">
+                    <i class="bi bi-arrow-repeat spin-animating" style="margin-right: 0.3rem;"></i>每 3 秒自動更新即時得票數...
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- Right: Candidates Details -->
+        <div style="border-left: 1px solid var(--glass-border); padding-left: 2rem;">
+            <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem;"><i class="bi bi-info-circle-fill" style="color: #FF416C; margin-right: 0.5rem;"></i>餐廳候選詳細資料</h3>
+            
+            <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                {% for opt in options %}
+                    <div class="glass-card" style="padding: 1.2rem 1.5rem; border-radius: 16px; background: rgba(255,255,255,0.02);">
+                        <a href="{{ url_for('restaurant.detail', restaurant_id=opt.restaurant.id) }}" class="text-white" style="font-size: 1.1rem; font-weight: 700;" target="_blank">
+                            {{ opt.restaurant.name }} <i class="bi bi-box-arrow-up-right" style="font-size: 0.8rem; margin-left: 0.2rem;"></i>
+                        </a>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0.4rem 0 0 0;">
+                            📍 地址：{{ opt.restaurant.address }}<br>
+                            ⭐ 星級：{{ opt.restaurant.rating }} ★ | 距離約：{{ opt.restaurant.distance }}公尺
+                        </p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function selectVoteOption(optId) {
+        // Toggle selected styling
+        document.querySelectorAll('.vote-option-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        document.getElementById('opt-card-' + optId).classList.add('selected');
+        
+        // Select internal radio
+        document.getElementById('radio-' + optId).checked = true;
+    }
+
+    function copyRoomUrl() {
+        const urlText = document.getElementById('room-url').textContent;
+        navigator.clipboard.writeText(urlText).then(() => {
+            showToast('連結複製成功！快分享給朋友吧 🔗', 'success');
+        }).catch(err => {
+            showToast('複製連結失敗，請手動選取複製！', 'error');
+        });
+    }
+
+    {% if has_voted %}
+    // AJAX polling every 3 seconds for real-time progress bar chart
+    setInterval(() => {
+        fetch('{{ url_for("vote.room_data", room_id=room.id) }}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.options) {
+                data.options.forEach(opt => {
+                    // Update progress bar width
+                    const bar = document.getElementById('bar-' + opt.option_id);
+                    if (bar) {
+                        bar.style.width = opt.percentage + '%';
+                    }
+                    
+                    // Update text votes & percentage
+                    const txt = document.getElementById('pct-text-' + opt.option_id);
+                    if (txt) {
+                        txt.textContent = opt.votes + ' 票 (' + opt.percentage + '%)';
+                    }
+                });
+            }
+        })
+        .catch(err => console.error('Error polling voting data:', err));
+    }, 3000);
+    {% endif %}
+</script>
+{% endblock %}

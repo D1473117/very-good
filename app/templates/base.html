@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}隨便吃什麼都好 Let's Just Eat{% endblock %}</title>
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <!-- Custom Style CSS Sheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <!-- Glassmorphic Navbar -->
+    <nav class="navbar-glass">
+        <a href="{{ url_for('main.index') }}" class="navbar-brand">
+            <i class="bi bi-compass-fill"></i>
+            <span>隨便吃什麼都好</span>
+        </a>
+        <ul class="nav-links">
+            <li>
+                <a href="{{ url_for('main.index') }}" class="nav-link {% if request.endpoint == 'main.index' %}active{% endif %}">
+                    <i class="bi bi-dice-5"></i>
+                    <span>隨機抽選</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ url_for('main.nearby') }}" class="nav-link {% if request.endpoint == 'main.nearby' %}active{% endif %}">
+                    <i class="bi bi-geo-alt"></i>
+                    <span>附近餐廳</span>
+                </a>
+            </li>
+            {% if current_user.is_authenticated %}
+                <li>
+                    <a href="{{ url_for('profile.favorites') }}" class="nav-link {% if request.endpoint == 'profile.favorites' %}active{% endif %}">
+                        <i class="bi bi-heart-fill"></i>
+                        <span>我的收藏</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('profile.history') }}" class="nav-link {% if request.endpoint == 'profile.history' %}active{% endif %}">
+                        <i class="bi bi-clock-history"></i>
+                        <span>歷史紀錄</span>
+                    </a>
+                </li>
+                <li>
+                    <form action="{{ url_for('auth.logout') }}" method="POST" style="display: inline;">
+                        <button type="submit" class="nav-btn-secondary" style="border: none; background: transparent; padding: 0.4rem 0.8rem; border-radius: 8px; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 0.4rem;">
+                            <i class="bi bi-box-arrow-right"></i>
+                            <span>登出 ({{ current_user.username }})</span>
+                        </button>
+                    </form>
+                </li>
+            {% else %}
+                <li>
+                    <a href="{{ url_for('auth.login') }}" class="nav-link {% if request.endpoint == 'auth.login' %}active{% endif %}">
+                        登入
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('auth.register') }}" class="nav-btn">
+                        註冊
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="container">
+        <!-- Flask Flash Alerts -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flashes">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category if category != 'error' else 'danger' }}">
+                            {% if category == 'success' %}
+                                <i class="bi bi-check-circle-fill"></i>
+                            {% elif category == 'warning' %}
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                            {% elif category == 'danger' or category == 'error' %}
+                                <i class="bi bi-x-circle-fill"></i>
+                            {% else %}
+                                <i class="bi bi-info-circle-fill"></i>
+                            {% endif %}
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Body block -->
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Toast Notifications Placeholder -->
+    <div class="toast-container"></div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 隨便吃什麼都好 (Let's Just Eat). Designed with ❤️ & Glassmorphism.</p>
+    </footer>
+
+    <!-- Core AJAX Logic Script -->
+    <script src="{{ url_for('static', filename='js/favorite.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,56 +1,58 @@
-from flask import Blueprint, render_template, request, redirect, url_for, jsonify, flash
+from flask import Blueprint, render_template, request, jsonify
 from flask_login import login_required, current_user
+from app.models import db
+from app.models.favorite import Favorite
+from app.models.history import SpinHistory
+from app.models.review import Review
+from app.models.restaurant import Restaurant
 
 profile_bp = Blueprint('profile', __name__)
 
 @profile_bp.route('/profile/favorites')
 @login_required
 def favorites():
-    """
-    顯示當前使用者的收藏餐廳清單。
-    
-    調用 Favorite.get_by_user(current_user.id) 取得收藏清單。
-    渲染 templates/profile/favorites.html。
-    """
-    pass
-
-@profile_bp.route('/favorite/toggle', methods=['POST'])
-@login_required
-def toggle_favorite():
-    """
-    切換餐廳收藏狀態 (AJAX 非同步端點)。
-    
-    接收 JSON 或表單中的 restaurant_id。
-    1. 驗證該餐廳是否存在。
-    2. 檢查 favorites 表是否已有該 (user_id, restaurant_id) 紀錄。
-    3. 若有則刪除 (取消收藏)；若無則新增 (加入收藏)。
-    
-    回傳 JSON:
-        - 新增成功: { "status": "success", "favorited": True }
-        - 刪除成功: { "status": "success", "favorited": False }
-    """
-    pass
+    # Fetch all favorites for the logged-in user
+    user_favorites = Favorite.query.filter_by(user_id=current_user.id).order_by(Favorite.created_at.desc()).all()
+    restaurants = [fav.restaurant for fav in user_favorites if fav.restaurant]
+    return render_template('profile/favorites.html', restaurants=restaurants)
 
 @profile_bp.route('/profile/history')
 @login_required
 def history():
-    """
-    顯示當前使用者的推薦歷史紀錄。
-    
-    接收 URL 查詢參數 page (預設 1) 及 limit (預設 10)。
-    分頁查詢 RecommendationHistory.get_by_user(current_user.id, limit, offset)。
-    
-    渲染 templates/profile/history.html。
-    """
-    pass
+    # Fetch spin history and review history
+    spins = SpinHistory.query.filter_by(user_id=current_user.id).order_by(SpinHistory.created_at.desc()).all()
+    reviews = Review.query.filter_by(user_id=current_user.id).order_by(Review.created_at.desc()).all()
+    return render_template('profile/history.html', spins=spins, reviews=reviews)
 
-@profile_bp.route('/profile/history/clear', methods=['POST'])
-@login_required
-def clear_history():
-    """
-    清空當前使用者的推薦歷史紀錄。
+@profile_bp.route('/favorite/toggle', methods=['POST'])
+def toggle_favorite():
+    # Manually check authentication to return 401 for AJAX requests
+    if not current_user.is_authenticated:
+        return jsonify({'error': '請先登入後再進行此操作！'}), 401
+        
+    data = request.json or {}
+    restaurant_id = data.get('restaurant_id')
     
-    調用 RecommendationHistory.clear_user_history(current_user.id) 清空紀錄。
-    重導向至 /profile/history，並 Flash 提示歷史已清空。
-    """
-    pass
+    if not restaurant_id:
+        return jsonify({'error': '未提供餐廳 ID'}), 400
+        
+    try:
+        res_id = int(restaurant_id)
+    except ValueError:
+        return jsonify({'error': '無效的餐廳 ID'}), 400
+        
+    restaurant = Restaurant.query.get(res_id)
+    if not restaurant:
+        return jsonify({'error': '找不到指定的餐廳'}), 404
+        
+    fav = Favorite.query.filter_by(user_id=current_user.id, restaurant_id=res_id).first()
+    
+    if fav:
+        db.session.delete(fav)
+        db.session.commit()
+        return jsonify({'status': 'success', 'favorited': False})
+    else:
+        new_fav = Favorite(user_id=current_user.id, restaurant_id=res_id)
+        db.session.add(new_fav)
+        db.session.commit()
+        return jsonify({'status': 'success', 'favorited': True})

@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ restaurant.name }} - 餐廳詳情{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Clickable star rating system */
+    .star-rating-input {
+        display: flex;
+        flex-direction: row-reverse;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        font-size: 1.8rem;
+        margin-bottom: 1rem;
+    }
+    .star-rating-input input {
+        display: none;
+    }
+    .star-rating-input label {
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: var(--transition-smooth);
+    }
+    .star-rating-input label:hover,
+    .star-rating-input label:hover ~ label,
+    .star-rating-input input:checked ~ label {
+        color: #ff9f1c;
+        transform: scale(1.15);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="glass-card accent-header">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 2rem;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                <h1 style="margin-bottom: 0;">{{ restaurant.name }}</h1>
+                <span class="badge-cuisine" style="font-size: 0.9rem; padding: 0.4rem 1rem;">{{ restaurant.category }}</span>
+            </div>
+            <p style="margin-top: 0.5rem; font-size: 1.1rem; color: var(--text-secondary);"><i class="bi bi-geo-alt-fill" style="color: #FF416C; margin-right: 0.3rem;"></i>{{ restaurant.address }}</p>
+        </div>
+        
+        <button type="button" class="favorite-btn-toggle {% if favorited %}active{% endif %}" id="detail-fav-btn" data-restaurant-id="{{ restaurant.id }}" style="font-size: 1.8rem; background: rgba(255,255,255,0.05); width: 50px; height: 50px; border-radius: 50%;">
+            <i class="bi {% if favorited %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+        </button>
+    </div>
+
+    <!-- Meta Grid -->
+    <div class="result-meta" style="background: rgba(255,255,255,0.02); padding: 1.5rem; border-radius: 16px; border: 1px solid var(--glass-border); margin-bottom: 2.5rem; gap: 2rem; justify-content: space-around;">
+        <div class="meta-item" style="font-size: 1.1rem;">
+            <i class="bi bi-star-fill" style="color: #ff9f1c; font-size: 1.3rem;"></i>
+            <strong>評分：</strong> <span>{{ restaurant.rating }}</span> / 5.0
+        </div>
+        <div class="meta-item" style="font-size: 1.1rem;">
+            <i class="bi bi-currency-dollar" style="font-size: 1.3rem;"></i>
+            <strong>價格等級：</strong> 
+            <span>
+                {% if restaurant.price_level == 1 %}平價 ($)
+                {% elif restaurant.price_level == 2 %}中等 ($$)
+                {% elif restaurant.price_level == 3 %}昂貴 ($$$)
+                {% elif restaurant.price_level == 4 %}奢華 ($$$$)
+                {% else %}未定義
+                {% endif %}
+            </span>
+        </div>
+        <div class="meta-item" style="font-size: 1.1rem;">
+            <i class="bi bi-geo-fill" style="font-size: 1.3rem;"></i>
+            <strong>約略距離：</strong> <span>{{ restaurant.distance }}m</span>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin-bottom: 3rem;">
+        <a href="https://www.google.com/maps/search/?api=1&query={{ restaurant.name | urlencode }}+{{ restaurant.address | urlencode }}" target="_blank" class="nav-btn" style="padding: 0.6rem 1.8rem;">
+            <i class="bi bi-compass"></i> 在 Google Maps 開啟導航
+        </a>
+        <a href="{{ url_for('main.index') }}" class="nav-btn-secondary" style="padding: 0.6rem 1.8rem;">
+            <i class="bi bi-arrow-left"></i> 回首頁隨機抽
+        </a>
+    </div>
+
+    <hr style="border: 0; border-top: 1px solid var(--glass-border); margin-bottom: 2.5rem;">
+
+    <!-- Review Section -->
+    <div style="display: grid; grid-template-columns: 1fr; gap: 2.5rem;">
+        <!-- Left Side: Review Input Form -->
+        <div class="glass-card" style="background: rgba(255,255,255,0.02); padding: 2rem; border-radius: 20px;">
+            <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem;"><i class="bi bi-chat-left-heart-fill" style="color: #FF416C; margin-right: 0.5rem;"></i>發表您的評論與評分</h3>
+            
+            {% if current_user.is_authenticated %}
+                <form action="{{ url_for('restaurant.submit_review', restaurant_id=restaurant.id) }}" method="POST">
+                    <div class="form-group">
+                        <label class="form-label">選擇星等評分</label>
+                        <div class="star-rating-input">
+                            <input type="radio" id="star5" name="rating" value="5" required /><label for="star5" class="bi bi-star-fill"></label>
+                            <input type="radio" id="star4" name="rating" value="4" /><label for="star4" class="bi bi-star-fill"></label>
+                            <input type="radio" id="star3" name="rating" value="3" /><label for="star3" class="bi bi-star-fill"></label>
+                            <input type="radio" id="star2" name="rating" value="2" /><label for="star2" class="bi bi-star-fill"></label>
+                            <input type="radio" id="star1" name="rating" value="1" /><label for="star1" class="bi bi-star-fill"></label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="comment">評論心得與推薦菜色</label>
+                        <textarea id="comment" name="comment" rows="4" class="form-control" placeholder="這家餐廳好不好吃？有什麼必點的美味嗎？寫下您的真實體驗吧！" required style="resize: vertical;"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="nav-btn" style="margin-top: 1rem; border-radius: 10px; font-weight: 700; padding: 0.6rem 2rem;">
+                        送出我的評價
+                    </button>
+                </form>
+            {% else %}
+                <div style="text-align: center; padding: 2rem 1rem;">
+                    <i class="bi bi-lock-fill" style="font-size: 2.5rem; color: var(--text-muted); margin-bottom: 1rem; display: block;"></i>
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem;">請先登入後，即可為這家餐廳寫下評分與心得！</p>
+                    <a href="{{ url_for('auth.login') }}" class="nav-btn" style="display: inline-flex; border-radius: 10px;">
+                        前往登入
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Side: Existing Reviews -->
+        <div>
+            <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem;"><i class="bi bi-chat-square-text-fill" style="color: #FF416C; margin-right: 0.5rem;"></i>會員精彩評論 (共 {{ reviews | length }} 則)</h3>
+            
+            {% if reviews %}
+                <div style="display: flex; flex-direction: column; gap: 1.2rem;">
+                    {% for r in reviews %}
+                        <div class="glass-card" style="padding: 1.5rem; border-radius: 16px; background: rgba(255,255,255,0.01);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem; flex-wrap: wrap; gap: 0.5rem;">
+                                <div style="display: flex; align-items: center; gap: 0.8rem;">
+                                    <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--primary-gradient); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.95rem; color: #fff;">
+                                        {{ r.user.username[0] | upper }}
+                                    </div>
+                                    <div>
+                                        <strong style="color: #fff;">{{ r.user.username }}</strong>
+                                        <div class="rating-stars" style="margin-top: 0.2rem;">
+                                            {% for i in range(r.rating | int) %}
+                                                <i class="bi bi-star-fill"></i>
+                                            {% endfor %}
+                                            {% for i in range(5 - r.rating | int) %}
+                                                <i class="bi bi-star"></i>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <span style="font-size: 0.8rem; color: var(--text-muted);"><i class="bi bi-clock" style="margin-right: 0.3rem;"></i>{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                            </div>
+                            
+                            <p style="color: var(--text-primary); margin-bottom: 0; white-space: pre-line; line-height: 1.6; font-size: 0.95rem;">
+                                {{ r.comment }}
+                            </p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state" style="padding: 3rem 1rem;">
+                    <i class="bi bi-chat-square-heart"></i>
+                    <h3>目前還沒有任何評價</h3>
+                    <p style="color: var(--text-muted);">成為第一個為這家餐廳寫下五星好評的人吧！</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

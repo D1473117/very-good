@@ -1,0 +1,158 @@
+{% extends 'base.html' %}
+
+{% block title %}附近餐廳 - 隨便吃什麼都好{% endblock %}
+
+{% block content %}
+<div class="glass-card accent-header">
+    <div style="margin-bottom: 2rem; text-align: center;">
+        <h1 style="font-size: 2.2rem;"><i class="bi bi-geo-alt-fill" style="color: #A78BFA; margin-right: 0.5rem;"></i>探索附近美食</h1>
+        <p style="color: var(--text-secondary); max-width: 600px; margin: 0.5rem auto 0 auto;">
+            在這裡探索我們為您精選的台中在地餐廳！設定您的偏好條件，隨時挖掘隱藏版美味。
+        </p>
+    </div>
+
+    <!-- Responsive Layout: Sidebar Filters + Restaurant Grid -->
+    <div class="restaurant-detail-grid">
+        <!-- Sidebar Filters -->
+        <div>
+            <h2><i class="bi bi-funnel-fill" style="color: #A78BFA; margin-right: 0.5rem;"></i>篩選與搜尋</h2>
+            
+            <form action="{{ url_for('main.nearby') }}" method="GET" id="explore-filter-form">
+                <!-- Text Search -->
+                <div class="form-group">
+                    <label class="form-label" for="search-input">搜尋關鍵字</label>
+                    <input type="text" id="search-input" name="search" class="form-control" placeholder="輸入餐廳名稱或地址..." value="{{ search or '' }}" autocomplete="off">
+                </div>
+
+                <!-- Distance Filter -->
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <label class="form-label" style="margin-bottom: 0;">最大距離範圍</label>
+                        <span id="distance-val-display" style="font-weight: 700; color: #A78BFA;">{{ distance or 3000 }}m</span>
+                    </div>
+                    <input type="range" id="distance-slider" name="distance" min="300" max="5000" step="100" value="{{ distance or 3000 }}">
+                </div>
+
+                <!-- Cuisine Filter -->
+                <div class="form-group">
+                    <label class="form-label" for="category-select">料理類型</label>
+                    <select id="category-select" name="category" class="form-control" style="background: rgba(15,12,32,0.6); color: #fff;">
+                        <option value="">-- 不限類型 --</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Minimum Rating Filter -->
+                <div class="form-group">
+                    <label class="form-label" for="rating-select">最低星等評分</label>
+                    <select id="rating-select" name="rating" class="form-control" style="background: rgba(15,12,32,0.6); color: #fff;">
+                        <option value="">-- 不限評分 --</option>
+                        <option value="4.0" {% if rating == 4.0 %}selected{% endif %}>4.0 ★ 以上</option>
+                        <option value="4.3" {% if rating == 4.3 %}selected{% endif %}>4.3 ★ 以上</option>
+                        <option value="4.5" {% if rating == 4.5 %}selected{% endif %}>4.5 ★ 以上</option>
+                        <option value="4.7" {% if rating == 4.7 %}selected{% endif %}>4.7 ★ 以上</option>
+                    </select>
+                </div>
+
+                <!-- Price Level Filter -->
+                <div class="form-group">
+                    <label class="form-label">價格等級 (複選)</label>
+                    <div class="chips-container">
+                        <input type="checkbox" id="price1" name="price" value="1" class="chip-checkbox" {% if not price_list or 1 in price_list %}checked{% endif %}>
+                        <label for="price1" class="chip-label">
+                            <i class="bi bi-currency-dollar"></i>平價
+                        </label>
+
+                        <input type="checkbox" id="price2" name="price" value="2" class="chip-checkbox" {% if not price_list or 2 in price_list %}checked{% endif %}>
+                        <label for="price2" class="chip-label">
+                            <i class="bi bi-currency-dollar"></i><i class="bi bi-currency-dollar"></i>中等
+                        </label>
+
+                        <input type="checkbox" id="price3" name="price" value="3" class="chip-checkbox" {% if not price_list or 3 in price_list %}checked{% endif %}>
+                        <label for="price3" class="chip-label">
+                            <i class="bi bi-currency-dollar"></i><i class="bi bi-currency-dollar"></i><i class="bi bi-currency-dollar"></i>昂貴
+                        </label>
+
+                        <input type="checkbox" id="price4" name="price" value="4" class="chip-checkbox" {% if not price_list or 4 in price_list %}checked{% endif %}>
+                        <label for="price4" class="chip-label">
+                            <i class="bi bi-currency-dollar"></i><i class="bi bi-currency-dollar"></i><i class="bi bi-currency-dollar"></i><i class="bi bi-currency-dollar"></i>奢華
+                        </label>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 0.8rem; margin-top: 2rem;">
+                    <button type="submit" class="spin-btn" style="flex: 1; padding: 0.7rem 1.2rem; font-size: 1rem; border-radius: 12px; justify-content: center; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);">
+                        套用篩選
+                    </button>
+                    <a href="{{ url_for('main.nearby') }}" class="nav-btn-secondary" style="border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 0.7rem 1rem;">
+                        重設
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Restaurants Listing -->
+        <div style="border-left: 1px solid var(--glass-border); padding-left: 2rem;">
+            <h2><i class="bi bi-grid-fill" style="color: #A78BFA; margin-right: 0.5rem;"></i>搜尋結果 (共 {{ restaurants | length }} 家)</h2>
+            
+            {% if restaurants %}
+                <div class="grid">
+                    {% for r in restaurants %}
+                        <div class="restaurant-card">
+                            <div class="card-cover">
+                                <i class="bi bi-shop"></i>
+                                <span class="badge-cuisine card-badge">{{ r.category }}</span>
+                                <button type="button" class="card-fav-btn {% if r.id in fav_ids %}active{% endif %}" data-restaurant-id="{{ r.id }}">
+                                    <i class="bi {% if r.id in fav_ids %}bi-heart-fill{% else %}bi-heart{% endif %}"></i>
+                                </button>
+                            </div>
+                            
+                            <div class="card-body">
+                                <div>
+                                    <a href="{{ url_for('restaurant.detail', restaurant_id=r.id) }}" class="card-title">{{ r.name }}</a>
+                                    <div class="card-meta">
+                                        <span><i class="bi bi-star-fill" style="color: #ff9f1c; margin-right: 0.3rem;"></i>{{ r.rating }} 評分</span>
+                                        <span><i class="bi bi-currency-dollar" style="margin-right: 0.3rem;"></i>
+                                            {% if r.price_level == 1 %}平價 ($)
+                                            {% elif r.price_level == 2 %}中等 ($$)
+                                            {% elif r.price_level == 3 %}昂貴 ($$$)
+                                            {% elif r.price_level == 4 %}奢華 ($$$$)
+                                            {% endif %}
+                                        </span>
+                                        <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;"><i class="bi bi-geo-alt-fill" style="margin-right: 0.3rem;"></i>{{ r.address }}</span>
+                                    </div>
+                                </div>
+                                
+                                <a href="{{ url_for('restaurant.detail', restaurant_id=r.id) }}" class="card-link" style="margin-top: 1rem;">
+                                    查看詳評與地圖 <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state" style="padding: 5rem 1rem;">
+                    <i class="bi bi-search-heart"></i>
+                    <h3>找不到符合條件的餐廳</h3>
+                    <p style="color: var(--text-muted);">請嘗試放寬搜尋關鍵字、擴大搜尋半徑或選擇其它料理類型！</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const slider = document.getElementById('distance-slider');
+        const display = document.getElementById('distance-val-display');
+        
+        slider.addEventListener('input', function() {
+            display.textContent = this.value + 'm';
+        });
+    });
+</script>
+{% endblock %}

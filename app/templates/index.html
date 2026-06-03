@@ -1,0 +1,302 @@
+{% extends 'base.html' %}
+
+{% block title %}隨機抽選餐廳 - 隨便吃什麼都好{% endblock %}
+
+{% block content %}
+<div class="glass-card accent-header">
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <h1 style="font-size: 2.5rem; letter-spacing: -0.5px;">隨便吃什麼都好</h1>
+        <p style="font-size: 1.1rem; color: var(--text-secondary); max-width: 600px; margin: 0.5rem auto 0 auto;">
+            還在糾結等一下要吃什麼嗎？設定簡單的條件，讓命運的羅盤為您選出最合適的美味餐廳！
+        </p>
+    </div>
+
+    <div class="restaurant-detail-grid">
+        <!-- Left Side: Filter Form -->
+        <div>
+            <h2><i class="bi bi-sliders" style="color: #A78BFA; margin-right: 0.5rem;"></i>篩選條件</h2>
+            
+            <form id="spin-filter-form">
+                <!-- Distance Filter -->
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <label class="form-label" style="margin-bottom: 0;">最大距離範圍</label>
+                        <span id="distance-value" style="font-weight: 700; color: #A78BFA; font-size: 1.1rem;">3000m</span>
+                    </div>
+                    <input type="range" id="distance" name="distance" min="300" max="5000" step="100" value="3000">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem;">
+                        <span>300m</span>
+                        <span>5000m</span>
+                    </div>
+                </div>
+
+                <!-- Price Level Filter -->
+                <div class="form-group">
+                    <label class="form-label">價格等級 (複選)</label>
+                    <div class="chips-container">
+                        <input type="checkbox" id="price1" name="price_level" value="1" class="chip-checkbox" checked>
+                        <label for="price1" class="chip-label">
+                            <i class="bi bi-currency-dollar"></i>平價 ($)
+                        </label>
+
+                        <input type="checkbox" id="price2" name="price_level" value="2" class="chip-checkbox" checked>
+                        <label for="price2" class="chip-label">
+                            <i class="bi bi-currency-dollar"></i><i class="bi bi-currency-dollar"></i>中等 ($$)
+                        </label>
+
+                        <input type="checkbox" id="price3" name="price_level" value="3" class="chip-checkbox" checked>
+                        <label for="price3" class="chip-label">
+                            <i class="bi bi-currency-dollar"></i><i class="bi bi-currency-dollar"></i><i class="bi bi-currency-dollar"></i>昂貴 ($$$)
+                        </label>
+
+                        <input type="checkbox" id="price4" name="price_level" value="4" class="chip-checkbox" checked>
+                        <label for="price4" class="chip-label">
+                            <i class="bi bi-currency-dollar"></i><i class="bi bi-currency-dollar"></i><i class="bi bi-currency-dollar"></i><i class="bi bi-currency-dollar"></i>奢華 ($$$$)
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Cuisine Category Filter -->
+                <div class="form-group">
+                    <label class="form-label">餐點類型 (複選，未選則視為不限)</label>
+                    <div class="chips-container">
+                        {% for category in categories %}
+                            <input type="checkbox" id="cuisine-{{ loop.index }}" name="cuisines" value="{{ category }}" class="chip-checkbox">
+                            <label for="cuisine-{{ loop.index }}" class="chip-label">
+                                {{ category }}
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Right Side: Spinner Widget -->
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 1px solid var(--glass-border); padding-left: 2rem;">
+            <div class="spin-wrapper">
+                <!-- Roulette Wheel design -->
+                <div class="roulette-container" id="roulette-wheel">
+                    <div class="roulette-arrow"></div>
+                    <div class="roulette-decorations">
+                        <div class="roulette-dot" style="transform: rotate(0deg);"></div>
+                        <div class="roulette-dot" style="transform: rotate(45deg);"></div>
+                        <div class="roulette-dot" style="transform: rotate(90deg);"></div>
+                        <div class="roulette-dot" style="transform: rotate(135deg);"></div>
+                        <div class="roulette-dot" style="transform: rotate(180deg);"></div>
+                        <div class="roulette-dot" style="transform: rotate(225deg);"></div>
+                        <div class="roulette-dot" style="transform: rotate(270deg);"></div>
+                        <div class="roulette-dot" style="transform: rotate(315deg);"></div>
+                    </div>
+                    <div class="roulette-inner" id="wheel-text">
+                        <i class="bi bi-question-circle" style="font-size: 2.5rem; margin-bottom: 0.5rem;"></i>
+                        <span>準備好嗎</span>
+                    </div>
+                </div>
+
+                <button type="button" class="spin-btn" id="spin-trigger-btn">
+                    <i class="bi bi-dice-5-fill"></i>
+                    開始隨機抽選
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recommendation Result Showcase Area -->
+    <div class="result-display-card" id="result-card">
+        <div class="result-header">
+            <div>
+                <a href="#" class="result-name" id="result-title">屋馬燒肉 中港店</a>
+                <div style="margin-top: 0.4rem;">
+                    <span class="badge-cuisine" id="result-category">日式</span>
+                </div>
+            </div>
+            
+            <button type="button" class="favorite-btn-toggle" id="result-fav-btn" data-restaurant-id="">
+                <i class="bi bi-heart"></i>
+            </button>
+        </div>
+
+        <div class="result-meta">
+            <div class="meta-item">
+                <i class="bi bi-star-fill" style="color: #ff9f1c;"></i>
+                <span id="result-rating">4.8</span> 評分
+            </div>
+            <div class="meta-item">
+                <i class="bi bi-currency-dollar"></i>
+                價格：<span id="result-price-label">中等 ($$)</span>
+            </div>
+            <div class="meta-item">
+                <i class="bi bi-geo-alt-fill"></i>
+                距離：<span id="result-distance">1500m</span>
+            </div>
+        </div>
+
+        <p style="margin-bottom: 1.2rem; font-size: 0.95rem; color: var(--text-secondary);">
+            <i class="bi bi-map" style="margin-right: 0.4rem;"></i>地址：<span id="result-address">台中市西屯區台灣大道三段300號</span>
+        </p>
+
+        <a href="#" class="nav-btn" id="result-detail-link" style="display: inline-flex; width: auto; align-self: flex-start; padding: 0.5rem 1.5rem; font-size: 0.9rem;">
+            查看詳細評論與導航
+            <i class="bi bi-arrow-right"></i>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const rangeSlider = document.getElementById('distance');
+    const distanceVal = document.getElementById('distance-value');
+    
+    // 滑桿移動事件更新文字
+    rangeSlider.addEventListener('input', function() {
+        distanceVal.textContent = this.value + 'm';
+    });
+
+    const spinBtn = document.getElementById('spin-trigger-btn');
+    const wheel = document.getElementById('roulette-wheel');
+    const wheelText = document.getElementById('wheel-text');
+    const resultCard = document.getElementById('result-card');
+    const form = document.getElementById('spin-filter-form');
+
+    // 隨機假名稱列表，用於轉動動畫效果
+    const placeholderNames = ['一蘭拉麵', '屋馬燒肉', '輕井澤鍋物', '春水堂', '宮原眼科', '鼎泰豐', '星巴克', '激旨燒鳥', '太初麵食', '茶六燒肉'];
+
+    spinBtn.addEventListener('click', function() {
+        // 收集篩選欄位資料
+        const distance = rangeSlider.value;
+        
+        // 價格複選欄位
+        const priceCheckboxes = document.querySelectorAll('input[name="price_level"]:checked');
+        const price_levels = Array.from(priceCheckboxes).map(cb => parseInt(cb.value));
+        
+        // 菜系複選欄位
+        const cuisineCheckboxes = document.querySelectorAll('input[name="cuisines"]:checked');
+        const cuisines = Array.from(cuisineCheckboxes).map(cb => cb.value);
+
+        // 檢查價格是否有勾選，若無則預設全選
+        if (price_levels.length === 0) {
+            showToast('請至少勾選一種價格等級！', 'warning');
+            return;
+        }
+
+        // 停用按鈕與開始動畫
+        spinBtn.disabled = true;
+        spinBtn.innerHTML = '<i class="bi bi-arrow-repeat spin-animating"></i> 正在挑選...';
+        resultCard.style.display = 'none';
+        
+        // 轉盤旋轉與文字閃動動畫
+        wheel.classList.add('spin-animating');
+        
+        let spinCounter = 0;
+        const spinInterval = setInterval(() => {
+            const tempName = placeholderNames[Math.floor(Math.random() * placeholderNames.length)];
+            wheelText.innerHTML = `<span style="font-size: 1.1rem; opacity: 0.7;">考慮中...</span><span style="font-size: 1.3rem; font-weight: 800; color: #ffeb3b; display: block; margin-top: 0.3rem;">${tempName}</span>`;
+        }, 100);
+
+        // 送出 AJAX 抽選請求
+        fetch('/spin', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                distance: distance,
+                price_level: price_levels,
+                cuisines: cuisines
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(err.error || '抽選失敗！');
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            // 設定一個最短動畫時間 (1.5秒)，增加遊戲體驗感
+            setTimeout(() => {
+                clearInterval(spinInterval);
+                wheel.classList.remove('spin-animating');
+                
+                // 轉盤展示獲勝者
+                wheelText.innerHTML = `
+                    <i class="bi bi-trophy-fill" style="font-size: 1.8rem; color: #ffeb3b; margin-bottom: 0.3rem; filter: drop-shadow(0 0 5px rgba(255,235,59,0.5));"></i>
+                    <span style="font-size: 1.1rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">${data.name}</span>
+                `;
+
+                // 填充結果卡片資訊
+                document.getElementById('result-title').textContent = data.name;
+                document.getElementById('result-title').href = `/restaurant/${data.id}`;
+                document.getElementById('result-category').textContent = data.category;
+                document.getElementById('result-rating').textContent = data.rating;
+                document.getElementById('result-distance').textContent = data.distance + 'm';
+                document.getElementById('result-address').textContent = data.address;
+                document.getElementById('result-detail-link').href = `/restaurant/${data.id}`;
+                
+                // 價格等級標籤對應
+                let priceLabel = '平價 ($)';
+                if (data.price_level === 2) priceLabel = '中等 ($$)';
+                if (data.price_level === 3) priceLabel = '昂貴 ($$$)';
+                if (data.price_level === 4) priceLabel = '奢華 ($$$$)';
+                document.getElementById('result-price-label').textContent = priceLabel;
+
+                // 收藏按鈕屬性更新
+                const favBtn = document.getElementById('result-fav-btn');
+                favBtn.dataset.restaurantId = data.id;
+                
+                // 異步查核目前使用者是否收藏該項
+                if (data.favorited) {
+                    favBtn.classList.add('active');
+                    favBtn.querySelector('i').className = 'bi bi-heart-fill';
+                } else {
+                    favBtn.classList.remove('active');
+                    favBtn.querySelector('i').className = 'bi bi-heart';
+                }
+
+                // 顯示結果卡片
+                resultCard.style.display = 'block';
+                
+                // 撥放語音或音效
+                showToast(`為您推薦餐廳：${data.name}！ 🥳`, 'success');
+
+                // 重新啟用按鈕
+                spinBtn.disabled = false;
+                spinBtn.innerHTML = '<i class="bi bi-dice-5-fill"></i> 開始隨機抽選';
+                
+                // 重新綁定新生成按鈕的點擊監聽
+                if (window.setupFavoriteButtons) {
+                    window.setupFavoriteButtons();
+                }
+            }, 1500);
+        })
+        .catch(error => {
+            clearInterval(spinInterval);
+            wheel.classList.remove('spin-animating');
+            wheelText.innerHTML = `
+                <i class="bi bi-exclamation-triangle-fill" style="font-size: 2.2rem; color: #ff4757; margin-bottom: 0.5rem;"></i>
+                <span style="font-size: 0.95rem; color: #fff;">無法抽取</span>
+            `;
+            
+            showToast(error.message || '找不到餐廳，請放寬篩選條件！', 'error');
+            
+            spinBtn.disabled = false;
+            spinBtn.innerHTML = '<i class="bi bi-dice-5-fill"></i> 開始隨機抽選';
+        });
+    });
+        // 為了簡單，我們可以直接從後端 /spin 回傳目前使用者的收藏狀態，但既然 /spin
+        // 已經結束，最快的方法是向 profile.py 發送一個 /favorite/toggle (這會切換)，但我們不想要切換它，
+        // 故我們直接讓 `/spin` 回傳是否已收藏是最優秀的做法。
+        // 等一下，我們來看一下 `main.py` 的 `/spin` 路由：
+        // 噢！ `/spin` 路由沒有回傳是否 favorited。那我們怎麼做？
+        // 我們可以在 favorites 頁面直接渲染；而在 `/spin` 後端其實可以多加一個 `favorited` 欄位！
+        // 我們要修改 `app/routes/main.py` 嗎？
+        // 沒關係，我們可以直接去 `app/routes/main.py` 修改一下，讓 /spin 也回傳 `favorited: True/False` 
+        // 這樣最簡單！但其實我們也可以直接在 index.html 用 Fetch 檢查，或者直接修改 main.py 的 /spin 端點！
+        // 沒錯，修改 `main.py` 加上 `favorited` 會非常方便。
+});
+</script>
+{% endblock %}

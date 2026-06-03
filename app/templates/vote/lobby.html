@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}多人投票大廳 - 隨便吃什麼都好{% endblock %}
+
+{% block content %}
+<div class="glass-card accent-header">
+    <div style="text-align: center; margin-bottom: 3rem;">
+        <h1 style="font-size: 2.2rem;"><i class="bi bi-people-fill" style="color: #FF416C; margin-right: 0.5rem;"></i>多人投票決策大廳</h1>
+        <p style="color: var(--text-secondary); max-width: 600px; margin: 0.5rem auto 0 auto;">
+            聚餐總是喬不攏？發起一個投票房間，邀請朋友們在我們為您隨機抽選的美味餐點中做出民主的抉擇！
+        </p>
+    </div>
+
+    <div class="restaurant-detail-grid" style="gap: 3rem;">
+        <!-- Left: Create Room Form -->
+        <div class="glass-card" style="background: rgba(255,255,255,0.02); padding: 2rem; border-radius: 20px; height: fit-content;">
+            <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem;"><i class="bi bi-plus-circle-fill" style="color: #FF416C; margin-right: 0.5rem;"></i>發起全新聚餐投票</h3>
+            
+            <form action="{{ url_for('vote.create_room') }}" method="POST">
+                <div class="form-group">
+                    <label class="form-label" for="title-input">活動聚餐名稱</label>
+                    <input type="text" id="title-input" name="title" class="form-control" placeholder="例如：週五部門聚餐、週末死黨吃大餐..." required autocomplete="off">
+                </div>
+                
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+                    💡 系統將會從資料庫中隨機挑選 4 間精選餐廳作為候選名單，建立房間後您可以分享專屬網址給同行夥伴！
+                </p>
+                
+                <button type="submit" class="spin-btn" style="width: 100%; padding: 0.8rem; font-size: 1.1rem; border-radius: 12px; justify-content: center; box-shadow: 0 4px 15px rgba(255,65,108,0.2);">
+                    立即建立投票房
+                </button>
+            </form>
+        </div>
+
+        <!-- Right: Recent Active Rooms -->
+        <div style="border-left: 1px solid var(--glass-border); padding-left: 2rem;">
+            <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem;"><i class="bi bi-activity" style="color: #FF416C; margin-right: 0.5rem;"></i>最近發起的投票房間</h3>
+            
+            {% if rooms %}
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    {% for r in rooms %}
+                        <div class="glass-card" style="padding: 1.5rem; border-radius: 16px; background: rgba(255,255,255,0.01); display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                            <div>
+                                <h4 style="color: #fff; font-size: 1.1rem; font-weight: 700;">{{ r.title }}</h4>
+                                <span style="font-size: 0.8rem; color: var(--text-muted);"><i class="bi bi-clock" style="margin-right: 0.3rem;"></i>發起時間：{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                            </div>
+                            
+                            <a href="{{ url_for('vote.room', room_id=r.id) }}" class="nav-btn-secondary" style="border-radius: 20px; font-weight: 600; padding: 0.4rem 1.2rem; font-size: 0.9rem;">
+                                進入房間
+                            </a>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="empty-state" style="padding: 3rem 1rem;">
+                    <i class="bi bi-chat-square-dots"></i>
+                    <h3>目前沒有活躍的投票房</h3>
+                    <p style="color: var(--text-muted);">趕快填寫左側表單，成為第一個發起聚會的人吧！</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
