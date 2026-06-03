@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row mb-4 align-items-center">
+        <div class="col">
+            <h2><i class="bi bi-people-fill text-primary"></i> 決戰時刻！今晚吃哪家？</h2>
+            <p class="text-muted">邀請朋友一起來投票，少數服從多數！</p>
+        </div>
+        <div class="col-auto">
+            <button id="shareBtn" class="btn btn-outline-success">
+                <i class="bi bi-share"></i> 複製邀請連結
+            </button>
+        </div>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 g-4" id="candidates-container">
+        {% for candidate in candidates %}
+        <div class="col">
+            <div class="card h-100 shadow-sm border-0 bg-light">
+                <div class="card-body text-center py-5">
+                    <h4 class="card-title fw-bold mb-3">{{ candidate.name }}</h4>
+                    <span class="badge bg-secondary mb-4">{{ candidate.category }}</span>
+                    
+                    <h1 class="display-1 text-primary fw-bold mb-4" id="vote-count-{{ candidate.id }}">
+                        {{ candidate.vote_count }}
+                    </h1>
+                    <p class="text-muted">目前得票數</p>
+                    
+                    <button class="btn btn-primary btn-lg w-100 vote-btn mt-3" data-id="{{ candidate.id }}">
+                        <i class="bi bi-hand-index-thumb"></i> 投給這家！
+                    </button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    const roomId = "{{ room_id }}";
+    
+    // 1. 複製分享連結功能
+    document.getElementById('shareBtn').addEventListener('click', function() {
+        const url = window.location.href;
+        navigator.clipboard.writeText(url).then(() => {
+            alert('連結已複製！快貼到 LINE 群組讓大家投票吧！');
+        }).catch(err => {
+            console.error('複製失敗:', err);
+        });
+    });
+
+    // 2. 投票按鈕點擊事件 (AJAX)
+    document.querySelectorAll('.vote-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+            const restaurantId = this.getAttribute('data-id');
+            // 避免狂點，先暫時禁用按鈕
+            this.disabled = true;
+            
+            try {
+                const response = await fetch(`/voting/${roomId}/vote`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ restaurant_id: parseInt(restaurantId) })
+                });
+                
+                const data = await response.json();
+                if (data.status === 'success') {
+                    this.innerHTML = '<i class="bi bi-check-circle"></i> 已投票';
+                    this.classList.replace('btn-primary', 'btn-success');
+                } else {
+                    alert(data.message);
+                    this.disabled = false;
+                }
+            } catch (error) {
+                console.error('投票發生錯誤:', error);
+                this.disabled = false;
+            }
+        });
+    });
+
+    // 3. 定時更新票數 (每 2 秒抓一次最新結果，打造即時互動感)
+    setInterval(async () => {
+        try {
+            const response = await fetch(`/voting/${roomId}/results`);
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                data.results.forEach(result => {
+                    // 找到畫面上對應的數字元素並更新
+                    const countElement = document.getElementById(`vote-count-${result.restaurant_id}`);
+                    if (countElement && countElement.innerText != result.vote_count) {
+                        countElement.innerText = result.vote_count;
+                        
+                        // 稍微加個動畫效果 (可選)
+                        countElement.classList.add('text-danger');
+                        setTimeout(() => countElement.classList.remove('text-danger'), 300);
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('更新票數失敗:', error);
+        }
+    }, 2000);
+</script>
+{% endblock %}

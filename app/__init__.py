@@ -33,11 +33,14 @@ def create_app(test_config=None):
     from app.routes.history_routes import history_bp
     from app.routes.main import main_bp
     from app.routes.restaurant import restaurant_bp
+    from app.routes.voting import voting_bp
     
     app.register_blueprint(favorite_bp)
     app.register_blueprint(history_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(restaurant_bp)
+    app.register_blueprint(voting_bp)
+
 
 
     return app

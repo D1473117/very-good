@@ -6,4 +6,7 @@ db = SQLAlchemy()
 from app.models.favorite import Favorite
 from app.models.history import History
 from app.models.restaurant import Restaurant
+from app.models.voting_room import VotingRoom
+from app.models.room_candidate import RoomCandidate
+
 
