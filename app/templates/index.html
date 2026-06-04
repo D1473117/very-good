@@ -74,22 +74,17 @@
         <!-- Right Side: Spinner Widget -->
         <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; border-left: 1px solid var(--glass-border); padding-left: 2rem;">
             <div class="spin-wrapper">
-                <!-- Roulette Wheel design -->
-                <div class="roulette-container" id="roulette-wheel">
-                    <div class="roulette-arrow"></div>
-                    <div class="roulette-decorations">
-                        <div class="roulette-dot" style="transform: rotate(0deg);"></div>
-                        <div class="roulette-dot" style="transform: rotate(45deg);"></div>
-                        <div class="roulette-dot" style="transform: rotate(90deg);"></div>
-                        <div class="roulette-dot" style="transform: rotate(135deg);"></div>
-                        <div class="roulette-dot" style="transform: rotate(180deg);"></div>
-                        <div class="roulette-dot" style="transform: rotate(225deg);"></div>
-                        <div class="roulette-dot" style="transform: rotate(270deg);"></div>
-                        <div class="roulette-dot" style="transform: rotate(315deg);"></div>
-                    </div>
-                    <div class="roulette-inner" id="wheel-text">
-                        <i class="bi bi-question-circle" style="font-size: 2.5rem; margin-bottom: 0.5rem;"></i>
-                        <span>準備好嗎</span>
+                <!-- Slot Machine Design -->
+                <div class="slot-machine-container" id="slot-machine">
+                    <div class="slot-window">
+                        <div class="slot-reel" id="wheel-text">
+                            <div class="slot-item primary-text">
+                                <div style="display: flex; flex-direction: column; align-items: center;">
+                                    <i class="bi bi-question-circle" style="font-size: 2.5rem; margin-bottom: 0.5rem;"></i>
+                                    <span>準備好嗎</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -186,14 +181,24 @@ document.addEventListener('DOMContentLoaded', function() {
         spinBtn.innerHTML = '<i class="bi bi-arrow-repeat spin-animating"></i> 正在挑選...';
         resultCard.style.display = 'none';
         
-        // 轉盤旋轉與文字閃動動畫
-        wheel.classList.add('spin-animating');
-        
-        let spinCounter = 0;
-        const spinInterval = setInterval(() => {
+        // 轉盤旋轉與文字閃動動畫 (老虎機版本)
+        // 產生長長的滾輪列表
+        let reelHtml = '';
+        for (let i = 0; i < 30; i++) {
             const tempName = placeholderNames[Math.floor(Math.random() * placeholderNames.length)];
-            wheelText.innerHTML = `<span style="font-size: 1.1rem; opacity: 0.7;">考慮中...</span><span style="font-size: 1.3rem; font-weight: 800; color: #ffeb3b; display: block; margin-top: 0.3rem;">${tempName}</span>`;
-        }, 100);
+            reelHtml += `<div class="slot-item slot-blur"><div style="display: flex; flex-direction: column; align-items: center;"><span style="font-size: 1.4rem; opacity: 0.7;">考慮中...</span><span style="font-size: 1.8rem; font-weight: 800; color: #ffeb3b; display: block; margin-top: 0.5rem;">${tempName}</span></div></div>`;
+        }
+        wheelText.innerHTML = reelHtml;
+        
+        // 重置位置
+        wheelText.style.transition = 'none';
+        wheelText.style.transform = 'translateY(0)';
+        
+        // 稍微延遲後開始滾動
+        setTimeout(() => {
+            wheelText.style.transition = 'transform 2.5s cubic-bezier(0.1, 0.7, 0.1, 1)';
+            wheelText.style.transform = `translateY(-${29 * 180}px)`; // 每個 item 高度 180px
+        }, 50);
 
         // 送出 AJAX 抽選請求
         fetch('/spin', {
@@ -217,16 +222,21 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(data => {
-            // 設定一個最短動畫時間 (1.5秒)，增加遊戲體驗感
+            // 設定一個最短動畫時間 (3秒)，配合老虎機動畫
             setTimeout(() => {
-                clearInterval(spinInterval);
-                wheel.classList.remove('spin-animating');
-                
-                // 轉盤展示獲勝者
-                wheelText.innerHTML = `
-                    <i class="bi bi-trophy-fill" style="font-size: 1.8rem; color: #ffeb3b; margin-bottom: 0.3rem; filter: drop-shadow(0 0 5px rgba(255,235,59,0.5));"></i>
-                    <span style="font-size: 1.1rem; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">${data.name}</span>
-                `;
+                // 將最後一個項目改為中獎餐廳
+                const items = wheelText.querySelectorAll('.slot-item');
+                if (items.length > 0) {
+                    const lastItem = items[items.length - 1];
+                    lastItem.classList.remove('slot-blur');
+                    lastItem.classList.add('primary-text');
+                    lastItem.innerHTML = `
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <i class="bi bi-trophy-fill" style="font-size: 2.8rem; color: #ffeb3b; margin-bottom: 0.5rem; filter: drop-shadow(0 0 8px rgba(255,235,59,0.7));"></i>
+                            <span style="font-size: 1.8rem; font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; text-align: center;">${data.name}</span>
+                        </div>
+                    `;
+                }
 
                 // 填充結果卡片資訊
                 document.getElementById('result-title').textContent = data.name;
@@ -274,11 +284,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 1500);
         })
         .catch(error => {
-            clearInterval(spinInterval);
-            wheel.classList.remove('spin-animating');
+            wheelText.style.transition = 'none';
+            wheelText.style.transform = 'translateY(0)';
             wheelText.innerHTML = `
-                <i class="bi bi-exclamation-triangle-fill" style="font-size: 2.2rem; color: #ff4757; margin-bottom: 0.5rem;"></i>
-                <span style="font-size: 0.95rem; color: #fff;">無法抽取</span>
+                <div class="slot-item">
+                    <div style="display: flex; flex-direction: column; align-items: center;">
+                        <i class="bi bi-exclamation-triangle-fill" style="font-size: 2.2rem; color: #ff4757; margin-bottom: 0.5rem;"></i>
+                        <span style="font-size: 0.95rem; color: #fff;">無法抽取</span>
+                    </div>
+                </div>
             `;
             
             showToast(error.message || '找不到餐廳，請放寬篩選條件！', 'error');
