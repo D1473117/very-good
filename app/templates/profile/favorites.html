@@ -4,9 +4,55 @@
 
 {% block content %}
 <div class="glass-card accent-header">
-    <div style="margin-bottom: 2rem;">
-        <h1 style="font-size: 2.2rem;"><i class="bi bi-heart-fill" style="color: #FF416C; margin-right: 0.5rem;"></i>我的收藏清單</h1>
-        <p style="color: var(--text-secondary); margin-bottom: 0;">這裡收集了您所有鍾愛的美味餐廳，隨時可以回訪或開啟導航！</p>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3" style="margin-bottom: 2rem;">
+        <div>
+            <h1 style="font-size: 2.2rem; margin-bottom: 0.3rem;"><i class="bi bi-heart-fill" style="color: #FF416C; margin-right: 0.5rem;"></i>我的收藏清單</h1>
+            <p style="color: var(--text-secondary); margin-bottom: 0;">這裡收集了您所有鍾愛的美味餐廳，隨時可以回訪或開啟導航！</p>
+        </div>
+        <div>
+            <button type="button" class="nav-btn d-flex align-items-center gap-2" id="toggle-custom-btn" style="border-radius: 10px; padding: 0.6rem 1.2rem;">
+                <i class="bi bi-plus-circle-fill"></i>
+                <span>新增私房餐廳</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Glassmorphic Add Custom Restaurant Form (D1443860 feature) -->
+    <div class="glass-card bg-black bg-opacity-20 border-0 mb-4 p-4" id="custom-restaurant-container" style="display: none; border-radius: 12px; margin-top: -1rem;">
+        <h3 class="text-white mb-3"><i class="bi bi-shop-window text-warning me-2"></i>新增您的自訂私房菜</h3>
+        <form id="custom-restaurant-form">
+            <div class="row g-3">
+                <div class="col-md-6 col-lg-4">
+                    <label class="form-label text-white-50">餐廳名稱 <span class="text-danger">*</span></label>
+                    <input type="text" id="custom-name" required class="form-control glass-input text-white border-0 bg-white bg-opacity-10" placeholder="例如：阿爸的私房牛肉麵" style="border-radius: 8px;">
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <label class="form-label text-white-50">料理類別/標籤 <span class="text-danger">*</span></label>
+                    <input type="text" id="custom-category" required class="form-control glass-input text-white border-0 bg-white bg-opacity-10" placeholder="例如：台式、小吃、拉麵" style="border-radius: 8px;">
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <label class="form-label text-white-50">價格預算等級</label>
+                    <select id="custom-price" class="form-select glass-input text-white border-0 bg-white bg-opacity-10" style="border-radius: 8px; padding: 0.375rem 2.25rem 0.375rem 0.75rem;">
+                        <option value="1" style="background-color: #1e1b4b; color: #fff;">🏷️ 平價 (200元內)</option>
+                        <option value="2" style="background-color: #1e1b4b; color: #fff;">💰 中等 (200-500元)</option>
+                        <option value="3" style="background-color: #1e1b4b; color: #fff;">💎 昂貴 (~1000元)</option>
+                        <option value="4" style="background-color: #1e1b4b; color: #fff;">👑 奢華 (無上限)</option>
+                    </select>
+                </div>
+                <div class="col-md-6 col-lg-6">
+                    <label class="form-label text-white-50">Google 地圖導航連結</label>
+                    <input type="url" id="custom-maps-url" class="form-control glass-input text-white border-0 bg-white bg-opacity-10" placeholder="https://maps.google.com/..." style="border-radius: 8px;">
+                </div>
+                <div class="col-md-6 col-lg-6">
+                    <label class="form-label text-white-50">餐廳實體地址</label>
+                    <input type="text" id="custom-address" class="form-control glass-input text-white border-0 bg-white bg-opacity-10" placeholder="例如：台中市西屯區逢甲路..." style="border-radius: 8px;">
+                </div>
+                <div class="col-12 d-flex gap-2 justify-content-end mt-4">
+                    <button type="button" class="btn btn-outline-light px-4" id="cancel-custom-btn" style="border-radius: 8px;">取消</button>
+                    <button type="submit" class="btn btn-warning px-4 fw-bold" style="border-radius: 8px;"><i class="bi bi-check-lg me-1"></i>確認儲存並收藏</button>
+                </div>
+            </div>
+        </form>
     </div>
 
     {% if restaurants %}
@@ -55,4 +101,72 @@
         </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('toggle-custom-btn');
+    const container = document.getElementById('custom-restaurant-container');
+    const cancelBtn = document.getElementById('cancel-custom-btn');
+    const form = document.getElementById('custom-restaurant-form');
+
+    toggleBtn.addEventListener('click', function() {
+        if (container.style.display === 'none') {
+            container.style.display = 'block';
+            document.getElementById('custom-name').focus();
+        } else {
+            container.style.display = 'none';
+        }
+    });
+
+    cancelBtn.addEventListener('click', function() {
+        container.style.display = 'none';
+        form.reset();
+    });
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const name = document.getElementById('custom-name').value.trim();
+        const category = document.getElementById('custom-category').value.trim();
+        const price_level = parseInt(document.getElementById('custom-price').value);
+        const google_maps_url = document.getElementById('custom-maps-url').value.trim();
+        const address = document.getElementById('custom-address').value.trim() || '自訂私房菜位置';
+
+        fetch('/api/restaurants/custom', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                name: name,
+                category: category,
+                price_level: price_level,
+                google_maps_url: google_maps_url,
+                address: address
+            })
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw new Error(err.message || '儲存失敗') });
+            }
+            return response.json();
+        })
+        .then(res => {
+            showToast(res.message || '私房菜新增成功！', 'success');
+            container.style.display = 'none';
+            form.reset();
+            
+            // Reload page to show the new custom restaurant in favorites list after a short delay
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        })
+        .catch(err => {
+            showToast(err.message || '網路連線異常，請稍後再試！', 'error');
+        });
+    });
+});
+</script>
 {% endblock %}

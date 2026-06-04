@@ -17,6 +17,24 @@
             <h2><i class="bi bi-sliders" style="color: #A78BFA; margin-right: 0.5rem;"></i>篩選條件</h2>
             
             <form id="spin-filter-form">
+                <!-- Location Tracking & Landmark Selector -->
+                <div class="form-group">
+                    <label class="form-label"><i class="bi bi-geo-alt-fill text-danger me-1"></i>定位基準點</label>
+                    <div id="location-badge" class="badge rounded bg-warning-translucent py-2 px-3 text-white border-warning-glow mb-2" style="display: block; text-align: left; width: 100%; white-space: normal; line-height: 1.4;">
+                        <i class="bi bi-geo-fill text-warning-bright me-2"></i>正在取得 GPS 定位中...
+                    </div>
+                    <select id="select-landmark" class="form-select glass-input text-white border-0 bg-white bg-opacity-10" style="border-radius: 8px; padding: 0.5rem 1rem;">
+                        <option value="gps" style="background-color: #1e1b4b; color: #fff;">📍 優先使用目前 GPS 定位</option>
+                        <option value="taipei" style="background-color: #1e1b4b; color: #fff;">🏙️ 台北市中心 (大安區)</option>
+                        <option value="fengchia" style="background-color: #1e1b4b; color: #fff;">🎒 台中逢甲大學</option>
+                        <option value="yichong" style="background-color: #1e1b4b; color: #fff;">🛍️ 台中一中商圈</option>
+                        <option value="taichunghs" style="background-color: #1e1b4b; color: #fff;">🚉 台中火車站</option>
+                    </select>
+                    <!-- Hidden GPS inputs -->
+                    <input type="hidden" id="latitude" name="latitude" value="">
+                    <input type="hidden" id="longitude" name="longitude" value="">
+                </div>
+
                 <!-- Distance Filter -->
                 <div class="form-group">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
@@ -27,6 +45,19 @@
                     <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem;">
                         <span>300m</span>
                         <span>5000m</span>
+                    </div>
+                </div>
+
+                <!-- Min Rating Filter -->
+                <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <label class="form-label" style="margin-bottom: 0;">最低評分星等</label>
+                        <span id="rating-value" style="font-weight: 700; color: #F59E0B; font-size: 1.1rem;">0.0 ★</span>
+                    </div>
+                    <input type="range" id="min_rating" name="min_rating" min="0.0" max="5.0" step="0.5" value="0.0">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem;">
+                        <span>0.0 ★</span>
+                        <span>5.0 ★</span>
                     </div>
                 </div>
 
@@ -72,6 +103,19 @@
                         {% endfor %}
                     </div>
                 </div>
+
+                <!-- Only Favorites Switch -->
+                {% if current_user.is_authenticated %}
+                <div class="form-group" style="margin-top: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" id="only_favorites" name="only_favorites" value="true" class="chip-checkbox">
+                        <label for="only_favorites" class="chip-label" style="width: 100%; justify-content: flex-start; padding: 0.6rem 1rem;">
+                            <i class="bi bi-heart-fill text-danger me-2"></i>
+                            僅從口袋名單中抽選
+                        </label>
+                    </div>
+                </div>
+                {% endif %}
             </form>
         </div>
 
@@ -145,64 +189,140 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // 1. Slider values dynamic updates
     const rangeSlider = document.getElementById('distance');
     const distanceVal = document.getElementById('distance-value');
-    
-    // 滑桿移動事件更新文字
     rangeSlider.addEventListener('input', function() {
         distanceVal.textContent = this.value + 'm';
     });
 
+    const ratingSlider = document.getElementById('min_rating');
+    const ratingVal = document.getElementById('rating-value');
+    ratingSlider.addEventListener('input', function() {
+        ratingVal.textContent = parseFloat(this.value).toFixed(1) + ' ★';
+    });
+
+    // 2. Geolocation Positioning Control
+    const latInput = document.getElementById('latitude');
+    const lngInput = document.getElementById('longitude');
+    const locationBadge = document.getElementById('location-badge');
+    const selectLandmark = document.getElementById('select-landmark');
+
+    const coordsPreset = {
+        taipei: { lat: 25.041, lng: 121.536, name: "台北市中心 (大安區)" },
+        fengchia: { lat: 24.1786, lng: 120.6468, name: "台中逢甲大學" },
+        yichong: { lat: 24.1486, lng: 120.6850, name: "台中一中商圈" },
+        taichunghs: { lat: 24.1373, lng: 120.6856, name: "台中火車站" }
+    };
+
+    let userGPS = null;
+
+    function applyLocation(source) {
+        if (source === 'gps') {
+            if (userGPS) {
+                latInput.value = userGPS.lat;
+                lngInput.value = userGPS.lng;
+                locationBadge.className = "badge rounded bg-success-translucent py-2 px-3 text-white border-success-glow mb-2";
+                locationBadge.innerHTML = `<i class="bi bi-geo-fill text-success-bright me-2"></i>已取得您的實時 GPS 定位`;
+            } else {
+                // Trigger fetch again
+                requestGPSLocation();
+            }
+        } else if (coordsPreset[source]) {
+            const p = coordsPreset[source];
+            latInput.value = p.lat;
+            lngInput.value = p.lng;
+            locationBadge.className = "badge rounded bg-info-translucent py-2 px-3 text-white border-info-glow mb-2";
+            locationBadge.innerHTML = `<i class="bi bi-geo-alt-fill text-info-bright me-2"></i>手動參考點：${p.name}`;
+        }
+    }
+
+    selectLandmark.addEventListener('change', function() {
+        applyLocation(this.value);
+    });
+
+    function requestGPSLocation() {
+        if (navigator.geolocation) {
+            locationBadge.className = "badge rounded bg-warning-translucent py-2 px-3 text-white border-warning-glow mb-2";
+            locationBadge.innerHTML = `<i class="bi bi-geo-fill text-warning-bright me-2"></i>正在取得 GPS 定位中...`;
+            
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    userGPS = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    if (selectLandmark.value === 'gps') {
+                        applyLocation('gps');
+                    }
+                },
+                function(error) {
+                    console.warn(`GPS failed: ${error.message}. Using Taipei Center fallback.`);
+                    userGPS = null;
+                    if (selectLandmark.value === 'gps') {
+                        // Fallback to default landmark visually
+                        selectLandmark.value = 'taipei';
+                        applyLocation('taipei');
+                        locationBadge.className = "badge rounded bg-danger-translucent py-2 px-3 text-white border-danger-glow mb-2";
+                        locationBadge.innerHTML = `<i class="bi bi-exclamation-triangle-fill text-danger-bright me-2"></i>定位失敗，已自動選定台北市中心`;
+                    }
+                },
+                { enableHighAccuracy: true, timeout: 6000, maximumAge: 0 }
+            );
+        } else {
+            // Geolocation unsupported
+            selectLandmark.value = 'taipei';
+            applyLocation('taipei');
+        }
+    }
+
+    // Auto-request GPS positioning on page load
+    requestGPSLocation();
+
+    // 3. Roulette Animation and Ajax Post Request
     const spinBtn = document.getElementById('spin-trigger-btn');
     const wheelText = document.getElementById('wheel-text');
     const resultCard = document.getElementById('result-card');
-    const form = document.getElementById('spin-filter-form');
 
-    // 隨機假名稱列表，用於轉動動畫效果
     const placeholderNames = ['一蘭拉麵', '屋馬燒肉', '輕井澤鍋物', '春水堂', '宮原眼科', '鼎泰豐', '星巴克', '激旨燒鳥', '太初麵食', '茶六燒肉'];
 
     spinBtn.addEventListener('click', function() {
-        // 收集篩選欄位資料
         const distance = rangeSlider.value;
+        const min_rating = parseFloat(ratingSlider.value);
         
-        // 價格複選欄位
         const priceCheckboxes = document.querySelectorAll('input[name="price_level"]:checked');
         let price_levels = Array.from(priceCheckboxes).map(cb => parseInt(cb.value));
+        if (price_levels.length === 0) price_levels = [1, 2, 3, 4];
 
-        // 如果完全沒有選擇，代表不限制價格，則全選送出
-        if (price_levels.length === 0) {
-            price_levels = [1, 2, 3, 4];
-        }
-
-        // 菜系複選欄位
         const cuisineCheckboxes = document.querySelectorAll('input[name="cuisines"]:checked');
         const cuisines = Array.from(cuisineCheckboxes).map(cb => cb.value);
 
-        // 停用按鈕與開始動畫
+        const onlyFavoritesCheckbox = document.getElementById('only_favorites');
+        const only_favorites = onlyFavoritesCheckbox ? onlyFavoritesCheckbox.checked : false;
+
+        const latitude = latInput.value;
+        const longitude = lngInput.value;
+
+        // UI locking and reset
         spinBtn.disabled = true;
         spinBtn.innerHTML = '<i class="bi bi-arrow-repeat spin-animating"></i> 正在挑選...';
         resultCard.style.display = 'none';
         
-        // 轉盤旋轉與文字閃動動畫 (老虎機版本)
-        // 產生長長的滾輪列表
+        // Build reel elements for slot machine shuffling
         let reelHtml = '';
         for (let i = 0; i < 30; i++) {
             const tempName = placeholderNames[Math.floor(Math.random() * placeholderNames.length)];
             reelHtml += `<div class="slot-item slot-blur"><div style="display: flex; flex-direction: column; align-items: center;"><span style="font-size: 1.4rem; opacity: 0.7;">考慮中...</span><span style="font-size: 1.8rem; font-weight: 800; color: #ffeb3b; display: block; margin-top: 0.5rem;">${tempName}</span></div></div>`;
         }
         wheelText.innerHTML = reelHtml;
-        
-        // 重置位置
         wheelText.style.transition = 'none';
         wheelText.style.transform = 'translateY(0)';
         
-        // 稍微延遲後開始滾動
         setTimeout(() => {
-            wheelText.style.transition = 'transform 2.5s cubic-bezier(0.1, 0.7, 0.1, 1)';
-            wheelText.style.transform = `translateY(-${29 * 180}px)`; // 每個 item 高度 180px
+            wheelText.style.transition = 'transform 2.2s cubic-bezier(0.1, 0.7, 0.1, 1)';
+            wheelText.style.transform = `translateY(-${29 * 180}px)`; // 180px per item
         }, 50);
 
-        // 送出 AJAX 抽選請求
         fetch('/spin', {
             method: 'POST',
             headers: {
@@ -212,7 +332,11 @@ document.addEventListener('DOMContentLoaded', function() {
             body: JSON.stringify({
                 distance: distance,
                 price_level: price_levels,
-                cuisines: cuisines
+                cuisines: cuisines,
+                min_rating: min_rating,
+                only_favorites: only_favorites,
+                latitude: latitude,
+                longitude: longitude
             })
         })
         .then(response => {
@@ -224,9 +348,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return response.json();
         })
         .then(data => {
-            // 設定一個最短動畫時間 (3秒)，配合老虎機動畫
             setTimeout(() => {
-                // 將最後一個項目改為中獎餐廳
                 const items = wheelText.querySelectorAll('.slot-item');
                 if (items.length > 0) {
                     const lastItem = items[items.length - 1];
@@ -240,7 +362,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     `;
                 }
 
-                // 填充結果卡片資訊
                 document.getElementById('result-title').textContent = data.name;
                 document.getElementById('result-title').href = `/restaurant/${data.id}`;
                 document.getElementById('result-category').textContent = data.category;
@@ -249,7 +370,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('result-address').textContent = data.address;
                 document.getElementById('result-detail-link').href = `/restaurant/${data.id}`;
                 
-                // 價格等級標籤對應
                 let priceLabel = '平價 ($)';
                 if (data.price_level === 1) priceLabel = '平價 (200元內)';
                 if (data.price_level === 2) priceLabel = '中等 (200-500元)';
@@ -257,11 +377,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.price_level === 4) priceLabel = '奢華 (無上限)';
                 document.getElementById('result-price-label').textContent = priceLabel;
 
-                // 收藏按鈕屬性更新
                 const favBtn = document.getElementById('result-fav-btn');
                 favBtn.dataset.restaurantId = data.id;
                 
-                // 異步查核目前使用者是否收藏該項
                 if (data.favorited) {
                     favBtn.classList.add('active');
                     favBtn.querySelector('i').className = 'bi bi-heart-fill';
@@ -270,17 +388,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     favBtn.querySelector('i').className = 'bi bi-heart';
                 }
 
-                // 顯示結果卡片
                 resultCard.style.display = 'block';
-                
-                // 撥放語音或音效
                 showToast(`為您推薦餐廳：${data.name}！ 🥳`, 'success');
 
-                // 重新啟用按鈕
                 spinBtn.disabled = false;
                 spinBtn.innerHTML = '<i class="bi bi-dice-5-fill"></i> 開始隨機抽選';
                 
-                // 重新綁定新生成按鈕的點擊監聽
                 if (window.setupFavoriteButtons) {
                     window.setupFavoriteButtons();
                 }
@@ -297,23 +410,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
             `;
-            
-            showToast(error.message || '找不到餐廳，請放寬篩選條件！', 'error');
+            showToast(error.message || '找不到餐廳，請調整條件！', 'error');
             
             spinBtn.disabled = false;
             spinBtn.innerHTML = '<i class="bi bi-dice-5-fill"></i> 開始隨機抽選';
         });
     });
-        // 為了簡單，我們可以直接從後端 /spin 回傳目前使用者的收藏狀態，但既然 /spin
-        // 已經結束，最快的方法是向 profile.py 發送一個 /favorite/toggle (這會切換)，但我們不想要切換它，
-        // 故我們直接讓 `/spin` 回傳是否已收藏是最優秀的做法。
-        // 等一下，我們來看一下 `main.py` 的 `/spin` 路由：
-        // 噢！ `/spin` 路由沒有回傳是否 favorited。那我們怎麼做？
-        // 我們可以在 favorites 頁面直接渲染；而在 `/spin` 後端其實可以多加一個 `favorited` 欄位！
-        // 我們要修改 `app/routes/main.py` 嗎？
-        // 沒關係，我們可以直接去 `app/routes/main.py` 修改一下，讓 /spin 也回傳 `favorited: True/False` 
-        // 這樣最簡單！但其實我們也可以直接在 index.html 用 Fetch 檢查，或者直接修改 main.py 的 /spin 端點！
-        // 沒錯，修改 `main.py` 加上 `favorited` 會非常方便。
 });
 </script>
 {% endblock %}

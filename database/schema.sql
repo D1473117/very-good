@@ -23,9 +23,12 @@ CREATE TABLE IF NOT EXISTS restaurants (
     rating FLOAT NOT NULL DEFAULT 0.0,
     address VARCHAR(255) NOT NULL,
     price_level INTEGER NOT NULL,   -- 1: 平價($)  2: 中等($$)  3: 昂貴($$$)  4: 奢華($$$$)
-    distance INTEGER NOT NULL,      -- 單位：公尺
+    distance INTEGER NOT NULL DEFAULT 1000,      -- 單位：公尺
     lat FLOAT,
-    lng FLOAT
+    lng FLOAT,
+    is_custom INTEGER DEFAULT 0,
+    session_id VARCHAR(100),
+    google_maps_url VARCHAR(500)
 );
 
 -- 會員收藏（User 與 Restaurant 的多對多關聯表）

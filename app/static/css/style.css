@@ -1126,3 +1126,49 @@ footer {
     filter: blur(1.5px);
     opacity: 0.8;
 }
+
+/* Translucent & Glow Badges for Location Selection */
+.bg-success-translucent {
+    background: rgba(46, 196, 182, 0.15) !important;
+}
+.border-success-glow {
+    border: 1px solid rgba(46, 196, 182, 0.4) !important;
+    box-shadow: 0 0 10px rgba(46, 196, 182, 0.2);
+}
+.text-success-bright {
+    color: #2ec4b6 !important;
+}
+
+.bg-warning-translucent {
+    background: rgba(255, 159, 28, 0.15) !important;
+}
+.border-warning-glow {
+    border: 1px solid rgba(255, 159, 28, 0.4) !important;
+    box-shadow: 0 0 10px rgba(255, 159, 28, 0.2);
+}
+.text-warning-bright {
+    color: #ff9f1c !important;
+}
+
+.bg-info-translucent {
+    background: rgba(0, 180, 219, 0.15) !important;
+}
+.border-info-glow {
+    border: 1px solid rgba(0, 180, 219, 0.4) !important;
+    box-shadow: 0 0 10px rgba(0, 180, 219, 0.2);
+}
+.text-info-bright {
+    color: #00B4DB !important;
+}
+
+.bg-danger-translucent {
+    background: rgba(231, 29, 54, 0.15) !important;
+}
+.border-danger-glow {
+    border: 1px solid rgba(231, 29, 54, 0.4) !important;
+    box-shadow: 0 0 10px rgba(231, 29, 54, 0.2);
+}
+.text-danger-bright {
+    color: #e71d36 !important;
+}
+
