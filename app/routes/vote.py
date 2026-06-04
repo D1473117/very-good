@@ -10,7 +10,9 @@ vote_bp = Blueprint('vote', __name__)
 def lobby():
     # Show active voting rooms or a create room card
     rooms = VoteRoom.query.order_by(VoteRoom.created_at.desc()).limit(10).all()
-    return render_template('vote/lobby.html', rooms=rooms)
+    # 傳遞所有餐廳供前端 datalist 搜尋使用
+    all_restaurants = Restaurant.query.with_entities(Restaurant.id, Restaurant.name).all()
+    return render_template('vote/lobby.html', rooms=rooms, all_restaurants=all_restaurants)
 
 @vote_bp.route('/vote/create', methods=['POST'])
 def create_room():
@@ -18,14 +20,43 @@ def create_room():
     if not title:
         title = "今天吃什麼？美味對決！"
         
-    # Pick 4 random restaurants from the database as candidates
-    restaurants = Restaurant.query.all()
-    if len(restaurants) < 2:
-        flash('資料庫餐廳數量不足，無法建立投票！', 'error')
+    # Get manually selected restaurant IDs
+    manual_ids = request.form.getlist('restaurant_ids')
+    manual_ids = [int(i) for i in manual_ids if i.isdigit()]
+    
+    # Get random count
+    random_count = request.form.get('random_count', type=int, default=0)
+    if random_count < 0:
+        random_count = 0
+        
+    if not manual_ids and random_count == 0:
+        flash('請至少手動挑選一家餐廳，或是設定隨機抽取數量！', 'error')
+        return redirect(url_for('vote.lobby'))
+
+    candidates = []
+    
+    # 1. Add manual candidates
+    if manual_ids:
+        manual_candidates = Restaurant.query.filter(Restaurant.id.in_(manual_ids)).all()
+        candidates.extend(manual_candidates)
+        
+    # 2. Add random candidates
+    if random_count > 0:
+        # Get all IDs excluding manual ones
+        query = Restaurant.query.with_entities(Restaurant.id)
+        if manual_ids:
+            query = query.filter(~Restaurant.id.in_(manual_ids))
+        available_ids = [r.id for r in query.all()]
+        
+        if available_ids:
+            random_picks = random.sample(available_ids, min(random_count, len(available_ids)))
+            random_candidates = Restaurant.query.filter(Restaurant.id.in_(random_picks)).all()
+            candidates.extend(random_candidates)
+            
+    if len(candidates) < 2:
+        flash('選項數量不足，無法建立投票！請至少加入或抽取 2 家餐廳。', 'error')
         return redirect(url_for('vote.lobby'))
         
-    candidates = random.sample(restaurants, min(4, len(restaurants)))
-    
     # Create room
     room = VoteRoom(title=title)
     db.session.add(room)
@@ -118,3 +149,11 @@ def room_data(room_id):
         'total_votes': total_votes,
         'options': data
     })
+
+@vote_bp.route('/vote/<room_id>/delete', methods=['POST'])
+def delete_room(room_id):
+    room_obj = VoteRoom.query.get_or_404(room_id)
+    db.session.delete(room_obj)
+    db.session.commit()
+    flash('投票房間已成功刪除！', 'success')
+    return redirect(url_for('vote.lobby'))

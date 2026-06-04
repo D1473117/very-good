@@ -56,10 +56,10 @@
             <i class="bi bi-currency-dollar" style="font-size: 1.3rem;"></i>
             <strong>價格等級：</strong> 
             <span>
-                {% if restaurant.price_level == 1 %}平價 ($)
-                {% elif restaurant.price_level == 2 %}中等 ($$)
-                {% elif restaurant.price_level == 3 %}昂貴 ($$$)
-                {% elif restaurant.price_level == 4 %}奢華 ($$$$)
+                {% if restaurant.price_level == 1 %}平價 (200元內)
+                {% elif restaurant.price_level == 2 %}中等 (200-500元)
+                {% elif restaurant.price_level == 3 %}昂貴 (~1000元)
+                {% elif restaurant.price_level == 4 %}奢華 (無上限)
                 {% else %}未定義
                 {% endif %}
             </span>

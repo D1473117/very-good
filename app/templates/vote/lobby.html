@@ -16,14 +16,41 @@
         <div class="glass-card" style="background: rgba(255,255,255,0.02); padding: 2rem; border-radius: 20px; height: fit-content;">
             <h3 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 1.5rem;"><i class="bi bi-plus-circle-fill" style="color: #FF416C; margin-right: 0.5rem;"></i>發起全新聚餐投票</h3>
             
-            <form action="{{ url_for('vote.create_room') }}" method="POST">
+            <form action="{{ url_for('vote.create_room') }}" method="POST" id="create-room-form">
                 <div class="form-group">
                     <label class="form-label" for="title-input">活動聚餐名稱</label>
                     <input type="text" id="title-input" name="title" class="form-control" placeholder="例如：週五部門聚餐、週末死黨吃大餐..." required autocomplete="off">
                 </div>
                 
-                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem;">
-                    💡 系統將會從資料庫中隨機挑選 4 間精選餐廳作為候選名單，建立房間後您可以分享專屬網址給同行夥伴！
+                <hr style="border-color: var(--glass-border); margin: 1.5rem 0;">
+                
+                <h4 style="font-size: 1rem; color: #fff; margin-bottom: 1rem;">1. 必吃名單 (手動挑選)</h4>
+                <div class="form-group">
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input list="restaurant-list" id="restaurant-search" class="form-control" placeholder="輸入關鍵字搜尋餐廳...">
+                        <datalist id="restaurant-list">
+                            {% for r in all_restaurants %}
+                                <option data-id="{{ r.id }}" value="{{ r.name }}"></option>
+                            {% endfor %}
+                        </datalist>
+                        <button type="button" class="nav-btn" id="add-restaurant-btn" style="white-space: nowrap; padding: 0 1rem; border-radius: 12px;">加入</button>
+                    </div>
+                    <div id="selected-restaurants-container" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1rem;">
+                        <!-- Selected chips go here -->
+                    </div>
+                </div>
+
+                <h4 style="font-size: 1rem; color: #fff; margin-bottom: 1rem; margin-top: 1.5rem;">2. 驚喜盲測 (隨機抽取)</h4>
+                <div class="form-group">
+                    <label class="form-label">由系統額外隨機加入幾家餐廳？</label>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <input type="range" id="random-count-slider" name="random_count" min="0" max="8" step="1" value="4" style="flex: 1;">
+                        <span id="random-count-display" style="font-size: 1.2rem; font-weight: 700; color: #FF416C; min-width: 30px; text-align: center;">4</span>
+                    </div>
+                </div>
+                
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.5rem; margin-top: 1rem;">
+                    💡 系統將會把「必吃名單」加上「驚喜盲測」混在一起建立投票房！
                 </p>
                 
                 <button type="submit" class="spin-btn" style="width: 100%; padding: 0.8rem; font-size: 1.1rem; border-radius: 12px; justify-content: center; box-shadow: 0 4px 15px rgba(255,65,108,0.2);">
@@ -45,9 +72,16 @@
                                 <span style="font-size: 0.8rem; color: var(--text-muted);"><i class="bi bi-clock" style="margin-right: 0.3rem;"></i>發起時間：{{ r.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
                             </div>
                             
-                            <a href="{{ url_for('vote.room', room_id=r.id) }}" class="nav-btn-secondary" style="border-radius: 20px; font-weight: 600; padding: 0.4rem 1.2rem; font-size: 0.9rem;">
-                                進入房間
-                            </a>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <a href="{{ url_for('vote.room', room_id=r.id) }}" class="nav-btn-secondary" style="border-radius: 20px; font-weight: 600; padding: 0.4rem 1.2rem; font-size: 0.9rem;">
+                                    進入房間
+                                </a>
+                                <form action="{{ url_for('vote.delete_room', room_id=r.id) }}" method="POST" style="margin: 0;" onsubmit="return confirm('確定要刪除這個投票房間嗎？刪除後所有投票紀錄將會永久消失喔！');">
+                                    <button type="submit" style="background: rgba(255,65,108,0.1); color: #FF416C; border: 1px solid rgba(255,65,108,0.3); border-radius: 20px; padding: 0.4rem 0.8rem; cursor: pointer; transition: all 0.3s;" title="刪除房間">
+                                        <i class="bi bi-trash-fill"></i>
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                     {% endfor %}
                 </div>
@@ -61,4 +95,79 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('restaurant-search');
+    const addBtn = document.getElementById('add-restaurant-btn');
+    const container = document.getElementById('selected-restaurants-container');
+    const datalist = document.getElementById('restaurant-list');
+    const slider = document.getElementById('random-count-slider');
+    const countDisplay = document.getElementById('random-count-display');
+
+    if (slider) {
+        slider.addEventListener('input', function() {
+            countDisplay.textContent = this.value;
+        });
+    }
+
+    if (addBtn) {
+        addBtn.addEventListener('click', function() {
+            const val = searchInput.value.trim();
+            if (!val) return;
+
+            let selectedId = null;
+            for (let option of datalist.options) {
+                if (option.value === val) {
+                    selectedId = option.getAttribute('data-id');
+                    break;
+                }
+            }
+
+            if (selectedId) {
+                if (document.querySelector(`input[name="restaurant_ids"][value="${selectedId}"]`)) {
+                    showToast('這家餐廳已經在名單中囉！', 'warning');
+                    searchInput.value = '';
+                    return;
+                }
+
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'restaurant_ids';
+                hiddenInput.value = selectedId;
+
+                const chip = document.createElement('div');
+                chip.className = 'badge rounded-pill';
+                chip.style.cssText = 'background: rgba(255,65,108,0.15); border: 1px solid rgba(255,65,108,0.4); color: #fff; padding: 0.4rem 0.8rem; font-size: 0.9rem; display: flex; align-items: center; gap: 0.5rem;';
+                chip.innerHTML = `
+                    ${val}
+                    <i class="bi bi-x-circle-fill remove-chip" style="cursor: pointer; color: #FF416C;"></i>
+                `;
+                
+                chip.appendChild(hiddenInput);
+
+                chip.querySelector('.remove-chip').addEventListener('click', function() {
+                    chip.remove();
+                });
+
+                container.appendChild(chip);
+                searchInput.value = ''; 
+            } else {
+                showToast('找不到該餐廳，請從下拉選單中挑選！', 'error');
+            }
+        });
+    }
+    
+    if (searchInput) {
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addBtn.click();
+            }
+        });
+    }
+});
+</script>
 {% endblock %}

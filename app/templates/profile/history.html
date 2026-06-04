@@ -82,10 +82,10 @@
                                     <td><a href="{{ url_for('restaurant.detail', restaurant_id=s.restaurant.id) }}" class="text-white">{{ s.restaurant.name }}</a></td>
                                     <td><span class="badge-cuisine">{{ s.restaurant.category }}</span></td>
                                     <td>
-                                        {% if s.restaurant.price_level == 1 %}$
-                                        {% elif s.restaurant.price_level == 2 %}$$
-                                        {% elif s.restaurant.price_level == 3 %}$$$
-                                        {% elif s.restaurant.price_level == 4 %}$$$$
+                                        {% if s.restaurant.price_level == 1 %}平價 (200元內)
+                                        {% elif s.restaurant.price_level == 2 %}中等 (200-500元)
+                                        {% elif s.restaurant.price_level == 3 %}昂貴 (~1000元)
+                                        {% elif s.restaurant.price_level == 4 %}奢華 (無上限)
                                         {% endif %}
                                     </td>
                                     <td>{{ s.distance }}m</td>

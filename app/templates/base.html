@@ -34,6 +34,12 @@
                     <span>附近餐廳</span>
                 </a>
             </li>
+            <li>
+                <a href="{{ url_for('vote.lobby') }}" class="nav-link {% if request.endpoint and request.endpoint.startswith('vote.') %}active{% endif %}">
+                    <i class="bi bi-people-fill"></i>
+                    <span>多人投票</span>
+                </a>
+            </li>
             {% if current_user.is_authenticated %}
                 <li>
                     <a href="{{ url_for('profile.favorites') }}" class="nav-link {% if request.endpoint == 'profile.favorites' %}active{% endif %}">

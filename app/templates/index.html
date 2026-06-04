@@ -34,24 +34,28 @@
                 <div class="form-group">
                     <label class="form-label">價格等級 (複選)</label>
                     <div class="chips-container">
-                        <input type="checkbox" id="price1" name="price_level" value="1" class="chip-checkbox" checked>
+                        <input type="checkbox" id="price1" name="price_level" value="1" class="chip-checkbox">
                         <label for="price1" class="chip-label">
-                            <i class="bi bi-currency-dollar"></i>平價 ($)
+                            <span class="chip-icon">🏷️</span>
+                            <span class="chip-text">平價 (200元內)</span>
                         </label>
 
-                        <input type="checkbox" id="price2" name="price_level" value="2" class="chip-checkbox" checked>
+                        <input type="checkbox" id="price2" name="price_level" value="2" class="chip-checkbox">
                         <label for="price2" class="chip-label">
-                            <i class="bi bi-currency-dollar"></i><i class="bi bi-currency-dollar"></i>中等 ($$)
+                            <span class="chip-icon">💰</span>
+                            <span class="chip-text">中等 (200-500元)</span>
                         </label>
 
-                        <input type="checkbox" id="price3" name="price_level" value="3" class="chip-checkbox" checked>
+                        <input type="checkbox" id="price3" name="price_level" value="3" class="chip-checkbox">
                         <label for="price3" class="chip-label">
-                            <i class="bi bi-currency-dollar"></i><i class="bi bi-currency-dollar"></i><i class="bi bi-currency-dollar"></i>昂貴 ($$$)
+                            <span class="chip-icon">💎</span>
+                            <span class="chip-text">昂貴 (~1000元)</span>
                         </label>
 
-                        <input type="checkbox" id="price4" name="price_level" value="4" class="chip-checkbox" checked>
+                        <input type="checkbox" id="price4" name="price_level" value="4" class="chip-checkbox">
                         <label for="price4" class="chip-label">
-                            <i class="bi bi-currency-dollar"></i><i class="bi bi-currency-dollar"></i><i class="bi bi-currency-dollar"></i><i class="bi bi-currency-dollar"></i>奢華 ($$$$)
+                            <span class="chip-icon">👑</span>
+                            <span class="chip-text">奢華 (無上限)</span>
                         </label>
                     </div>
                 </div>
@@ -150,7 +154,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     const spinBtn = document.getElementById('spin-trigger-btn');
-    const wheel = document.getElementById('roulette-wheel');
     const wheelText = document.getElementById('wheel-text');
     const resultCard = document.getElementById('result-card');
     const form = document.getElementById('spin-filter-form');
@@ -164,17 +167,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 價格複選欄位
         const priceCheckboxes = document.querySelectorAll('input[name="price_level"]:checked');
-        const price_levels = Array.from(priceCheckboxes).map(cb => parseInt(cb.value));
-        
+        let price_levels = Array.from(priceCheckboxes).map(cb => parseInt(cb.value));
+
+        // 如果完全沒有選擇，代表不限制價格，則全選送出
+        if (price_levels.length === 0) {
+            price_levels = [1, 2, 3, 4];
+        }
+
         // 菜系複選欄位
         const cuisineCheckboxes = document.querySelectorAll('input[name="cuisines"]:checked');
         const cuisines = Array.from(cuisineCheckboxes).map(cb => cb.value);
-
-        // 檢查價格是否有勾選，若無則預設全選
-        if (price_levels.length === 0) {
-            showToast('請至少勾選一種價格等級！', 'warning');
-            return;
-        }
 
         // 停用按鈕與開始動畫
         spinBtn.disabled = true;
@@ -249,9 +251,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // 價格等級標籤對應
                 let priceLabel = '平價 ($)';
-                if (data.price_level === 2) priceLabel = '中等 ($$)';
-                if (data.price_level === 3) priceLabel = '昂貴 ($$$)';
-                if (data.price_level === 4) priceLabel = '奢華 ($$$$)';
+                if (data.price_level === 1) priceLabel = '平價 (200元內)';
+                if (data.price_level === 2) priceLabel = '中等 (200-500元)';
+                if (data.price_level === 3) priceLabel = '昂貴 (~1000元)';
+                if (data.price_level === 4) priceLabel = '奢華 (無上限)';
                 document.getElementById('result-price-label').textContent = priceLabel;
 
                 // 收藏按鈕屬性更新
