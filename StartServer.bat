@@ -1,5 +1,8 @@
 @echo off
 chcp 65001
+echo Pulling latest code from GitHub...
+git pull
+echo.
 echo Installing required packages...
 py -m pip install -r requirements.txt
 echo.
